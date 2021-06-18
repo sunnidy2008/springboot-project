@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>权限表-列表</title>
+    <link rel="stylesheet" href="../../../css/base.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+    <script src="https://unpkg.com/element-ui@2.12.0/lib/index.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui@2.12.0/lib/theme-chalk/index.css">
+</head>
+<body>
+	<div id="app" v-cloak>
+	    <div class="mainBox height100" style="padding-bottom: 0;">
+	        <div class="layoutUi">
+	            <el-form :inline="true">
+		          	<el-form-item label="" prop="cName">
+		            	<el-input v-model="form.cName" placeholder="权限名称" clearable maxlength="50" show-word-limit ></el-input>
+		           	</el-form-item>
+		          	<el-form-item label="" prop="cEnname" v-if="false">
+		            	<el-input v-model="form.cEnname" placeholder="权限英文名称" clearable maxlength="50" show-word-limit ></el-input>
+		           	</el-form-item>
+		          	<el-form-item label="" prop="cUrl">
+		            	<el-input v-model="form.cUrl" placeholder="授权路径" clearable maxlength="200" show-word-limit ></el-input>
+		           	</el-form-item>
+		          	<el-form-item label="" prop="cMethod">
+		            	<el-input v-model="form.cMethod" placeholder="方法名（get，post，delete等，多个使用英文逗号分隔）" clearable maxlength="50" show-word-limit ></el-input>
+		           	</el-form-item>
+		          	<el-form-item label="" prop="cDescription">
+		            	<el-input v-model="form.cDescription" placeholder="备注" clearable maxlength="200" show-word-limit ></el-input>
+		           	</el-form-item>
+	                <el-form-item>
+	                    <el-button type="primary" @click="form._pageNum=1;query()">查询</el-button>
+						<el-button type="primary" @click="addNew" plain>新增</el-button>
+						<el-button type="success" @click="collect" plain>自动获取代码中的restful请求</el-button>
+	                </el-form-item>
+	            </el-form>
+	        </div>
+	        <el-table :data="tableData.resultList" :height="tableHeight" style="width: 100%">
+	            <!--数据区域-->
+	            <el-table-column prop="cPkId" label="主键" v-if="false"></el-table-column>
+	            <el-table-column prop="cName" label="权限名称" width="200"></el-table-column>
+	            <el-table-column prop="cEnname" label="权限英文名称" width="200" v-if="false"></el-table-column>
+	            <el-table-column prop="cUrl" label="授权路径" width="400"></el-table-column>
+	            <el-table-column prop="cMethod" label="方法名" width="200"></el-table-column>
+	            <el-table-column prop="cDescription" label="备注" width="200"></el-table-column>
+	            <el-table-column
+			      fixed="right"
+			      label="操作"
+			      width="120">
+			      <template slot-scope="scope">
+			        <el-button @click="detail(scope.row)" type="text" size="small">查看/修改</el-button>
+			        <el-button @click="del(scope.row)" type="text" size="small">删除</el-button>
+			      </template>
+			    </el-table-column>
+	        </el-table>
+	        <el-pagination :current-page="form._pageNum" :page-sizes="[10,20, 50, 100]" :page-size="form._pageSize"
+	                       @current-change="handleCurrentChange"
+	                       @size-change="handleSizeChange"
+	                       layout="total, sizes, prev, pager, next, jumper" :total="tableData.total">
+	        </el-pagination>
+	    </div>
+	</div>
+</body>
+</html>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+<script src="../../../js/utils.js"></script>
+<script>
+    var vm=new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                tableData: {
+                	resultList:[]
+                },
+                //查询表单上的字段
+                form: {
+                	"cPkId" : "",
+                	"cName" : "",
+                	"cEnname" : "",
+                	"cUrl" : "",
+                	"cMethod" : "",
+                	"cDescription" : "",
+                	"tCrtTm" : "",
+                	"tUpdTm" : "",
+                	"cCrtId" : "",
+                	"cUpdId" : "",
+                    _count: true,// 是否进行统计
+                    _pageNum: 1,// 当前页面
+                    _pageSize: 10,// 当前页面数据条数
+                    _total: 0,//总数
+                },
+                options:{
+			    },
+                tableHeight:0,//table的动态高度
+            }
+        },
+        methods: {
+			//查询
+            query: function (showTips) {
+            	//this.form._total = this.tableData.total;
+            	var that = this;
+            	utils.post("/api/sysPermission/list", this.form).then(function (res) {
+                    if (res.code == '1') {// 如果成功请求且code为1
+                    	that.tableData = res.data;
+                        if(showTips){
+                        	utils.successMsg(res.msg,that);
+                        }
+						//that.form._count = false;// 每次请求完至为false
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {
+                	utils.errorMsg("网络错误，请重试",that);
+                });
+            },
+            collect: function (showTips) {
+            	//this.form._total = this.tableData.total;
+            	var that = this;
+            	utils.post("/api/sysPermission/collect", this.form).then(function (res) {
+                    if (res.code == '1') {// 如果成功请求且code为1
+                    	that.tableData = [];
+                        if(showTips){
+                        	utils.successMsg(res.msg,that);
+                        	that.query(false);
+                        }
+						//that.form._count = false;// 每次请求完至为false
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {
+                	utils.errorMsg("网络错误，请重试",that);
+                });
+            },
+            //新增
+            addNew:function(){
+            	let that = this;
+                utils.openPopWin('新增','sysPermissionDetail.html',800,600,function(){
+                });
+            },
+            //查看、修改
+            detail:function(data){
+            	let that = this;
+                utils.openPopWin('详细','sysPermissionDetail.html?id='+data.cPkId,800,600,function(){
+                });
+            },
+            //删除
+            del:function(data){
+            	let that= this;
+            	this.$confirm('此操作将永久删除该数据, 是否继续?', '提示', {
+		          confirmButtonText: '确定',
+		          cancelButtonText: '取消',
+		          type: 'warning'
+		        }).then(() => {
+		        	utils.post("/api/sysPermission/delete",{id:data['cPkId']}).then(function (res) {
+	                    if (res.code == '1') {// 如果成功请求且code为1
+	                        utils.successMsg("删除成功",that);
+	                        that.query(false);
+							//that.form._count = false;// 每次请求完至为false
+	                    } else {
+	                        utils.errorMsg(res.msg,that);
+	                    }
+	                }, function (res) {
+	                	utils.errorMsg("网络错误，请重试",that);
+	                });
+		        }).catch(() => {
+		        });
+            },
+            getOptions(){
+            	let that = this;
+            	//TODO:item.option_key
+            	var params ={
+            	
+          			
+            		//cEnabled:'EFFECT',
+            		//cCss:'COLUMN_CSS'
+            	};
+            	//是否存在值需要去后台
+            	var hasKey=false;
+			    for(var key in params){  
+			    	hasKey=true;
+			        break;
+			    };  
+			    if(!hasKey){
+			    	return;
+			    }
+            	utils.post("/api/sysCommonCode/options",params).then(function (res) {
+            		console.log(JSON.stringify(res))
+                    if (res.code == '1') {// 如果成功请求且code为1
+                        for(var key in params){
+                        	that.options[key]=res.data[key];
+                        }
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {
+                	utils.errorMsg("网络错误，请重试",that);
+                });
+            },
+            // 当显示页面条数发生改变
+            handleSizeChange: function (val) {
+                this.form._pageSize = val;
+                this.query(true);
+            },
+            // 当当前页面发生改变
+            handleCurrentChange: function (val) {
+                this.form._pageNum = val;
+                this.query(true);
+            },
+            // 当搜索的条件发生改变
+            changeCount:function(){
+                this.form._count=true;// 将count为true，重新去统计
+            }
+        },
+        mounted: function () {
+        	var that = this;
+            //动态设置table的高度
+            let layoutUiHeight = document.getElementsByClassName("layoutUi")[0].clientHeight;
+            let pagination = document.getElementsByClassName("el-pagination")[0].clientHeight;
+            let mainHeight = document.getElementsByClassName("mainBox")[0].clientHeight
+            this.$nextTick(function(){
+				that.tableHeight = mainHeight-layoutUiHeight-pagination-20;
+			});
+			this.getOptions();
+            this.query(true);// 加载数据
+        }
+    });
+    
+</script>

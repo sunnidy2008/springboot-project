@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>websocket消息-详细</title>
+		<link rel="stylesheet" href="../../../css/base.css" />
+		<link rel="stylesheet" href="../../../css/iconfont.css" />
+		<link rel="stylesheet" href="https://unpkg.com/element-ui@2.12.0/lib/theme-chalk/index.css">
+		<script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+		<script src="https://unpkg.com/element-ui@2.12.0/lib/index.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+		<script src="../../../js/utils.js"></script>
+	</head>
+
+	<body>
+		<div id="app" v-cloak>
+			<el-form ref="form" :model="form" :rules="rules" label-width="80px" style="padding:10px">
+	          	<el-form-item label="发送者用户id" prop="cFromUserId">
+	            	<el-input v-model="form.cFromUserId" placeholder="发送者用户id" clearable maxlength="50" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="接受者用户id" prop="cToUserId">
+	            	<el-input v-model="form.cToUserId" placeholder="接受者用户id" clearable maxlength="50" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="消息类型（预留）" prop="cType">
+	            	<el-input v-model="form.cType" placeholder="消息类型（预留）" clearable maxlength="50" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="消息是否已读，Y已读,N未读" prop="cReadMrk">
+	            	<el-input v-model="form.cReadMrk" placeholder="消息是否已读，Y已读,N未读" clearable maxlength="1" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="消息文本" prop="cText">
+	            	<el-input v-model="form.cText" placeholder="消息文本" clearable maxlength="200" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="点击消息响应的url" prop="cUrl">
+	            	<el-input v-model="form.cUrl" placeholder="点击消息响应的url" clearable maxlength="200" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="消息附带的其他参数" prop="cExtraData">
+	            	<el-input v-model="form.cExtraData" placeholder="消息附带的其他参数" clearable maxlength="500" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="消息发送时间" prop="tSendTm">
+	            	<el-date-picker v-model="form.tSendTm" type="datetime" placeholder="选择日期时间" style="width:100%"></el-date-picker>
+	           	</el-form-item>
+	          	<el-form-item label="消息阅读时间" prop="tReadTm">
+	            	<el-date-picker v-model="form.tReadTm" type="datetime" placeholder="选择日期时间" style="width:100%"></el-date-picker>
+	           	</el-form-item>
+			  	<el-form-item>
+			    	<el-button type="primary" @click="onSubmit">提交</el-button>
+			    	<el-button @click="onCancel">取消</el-button>
+			  	</el-form-item>
+			</el-form>
+		</div>
+	</body>
+	
+	<script>
+		var vm = new Vue({
+			el: '#app',
+			data: function() {
+				return {
+				    form:{
+	                	"cPkId" : "",
+	                	"cFromUserId" : "",
+	                	"cToUserId" : "",
+	                	"cType" : "",
+	                	"cReadMrk" : "",
+	                	"cText" : "",
+	                	"cUrl" : "",
+	                	"cExtraData" : "",
+	                	"tSendTm" : "",
+	                	"tReadTm" : "",
+				    },
+				    rules:{
+	          			cFromUserId:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cToUserId:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cType:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cReadMrk:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cText:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cUrl:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cExtraData:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			tSendTm:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			tReadTm:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+				    },
+				    options:{
+				    },
+				}
+			},
+			methods: {
+				//保存用户信息
+				"onSubmit" : function(){
+					var that = this;
+					this.$refs['form'].validate((valid) => {
+			        	if (!valid) {
+			            	return false;
+			          	}
+						utils.post("/api/sysWsMessage", this.form).then(function (res) {
+	                        if (res.code == '1') {// 如果成功请求且code为1
+	                        	utils.successMsg(res.msg,that);
+	                        	setTimeout(function () {
+	                                parent.vm.query(false);
+	        						parent.utils.closePopWin();
+	                            },1000);
+	                        } else {
+	                            utils.errorMsg(res.msg,that);
+	                        }
+	
+	                    }, function (res) {
+	                        utils.errorMsg(res.msg,that);
+	                    });
+                    });
+				},
+				onCancel(){
+				  	parent.utils.closePopWin();
+				},
+				query(id){
+					let that = this;
+					utils.post("/api/sysWsMessage/detail",{id:id}).then(function (res) {
+                        if (res.code == '1') {// 如果成功请求且code为1
+                        	that.form=res.data;
+                        	utils.successMsg(res.msg,that);
+                        } else {
+                            utils.errorMsg(res.msg,that);
+                        }
+
+                    }, function (res) {
+                        utils.errorMsg(res.msg,that);
+                    });
+				},
+				getOptions(){
+	            	let that = this;
+	            	//TODO:item.option_key
+	            	var params ={
+	            	
+	          			
+	            		//cEnabled:'EFFECT',
+	            		//cCss:'COLUMN_CSS'
+	            	};
+	            	//是否存在值需要去后台
+	            	var hasKey=false;
+				    for(var key in params){  
+				    	hasKey=true;
+				        break;
+				    };  
+				    if(!hasKey){
+				    	return;
+				    }
+	            	utils.post("/api/sysCommonCode/options",params).then(function (res) {
+	            		console.log(JSON.stringify(res))
+	                    if (res.code == '1') {// 如果成功请求且code为1
+	                        for(var key in params){
+	                        	that.options[key]=res.data[key];
+	                        }
+	                    } else {
+	                        utils.errorMsg(res.msg,that);
+	                    }
+	                }, function (res) {
+	                	utils.errorMsg("网络错误，请重试",that);
+	                });
+	            },
+			},
+			watch:{
+
+			},
+			mounted:function () {
+				var that = this;
+				this.getOptions();
+                let id = utils.getParam("id");
+				if(id!=""){
+                	this.query(id);
+				}
+            }
+		})
+  </script>
+</html>

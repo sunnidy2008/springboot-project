@@ -1,0 +1,96 @@
+version: '2'
+services:
+  mysql:
+    container_name: demo_mysql
+    image: mysql:5.7
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: boot2demo_db
+      MYSQL_USER: 你的用户名
+      MYSQL_PASSWORD: 你的密码
+    ports:
+        - '3307:3306'
+    volumes:
+        - config:/etc/mysql
+        - logs:/var/log/mysql
+        - data:/var/lib/mysql
+    networks:
+        myNetwork:
+            aliases:
+                - backend-mysql
+        
+  redis:
+    container_name: demo-redis
+    image: hub.c.163.com/library/redis #用其他镜像会连接不上
+    command: --appendonly yes
+    ports:
+        - '6378:6379'
+    volumes:
+        - rdata:/data
+        - rconf:/etc/redis
+    networks:
+        myNetwork:
+            aliases:
+                - backend-redis
+        
+  demo:
+    container_name: demo
+    image: demo:0.0.1
+    #build:
+    #  context: ./
+    #  dockerfile: Dockerfile-jar
+    depends_on:
+        - mysql
+        - redis
+    ports:
+        - '9091:9090'
+    networks:
+        myNetwork:
+            aliases:
+                - backend-demo
+#  websocket通讯目前暂时无法支持分布式，所以只启动一个实例，后续改进              
+#  demo2:
+#    container_name: demo2
+#    image: demo:0.0.1
+#    depends_on:
+#        - mysql
+#        - redis
+#    ports:
+#        - '9092:9090'
+#    networks:
+#        myNetwork:
+#            aliases:
+#                - backend-demo2
+  nginx:
+    container_name: demo-nginx
+    image: hub.c.163.com/library/nginx:latest
+    ports:
+        - '80:80'
+    depends_on:
+        - demo
+#        - demo2
+    volumes:
+        - nginxlog:/var/log/nginx
+        - nginxetc:/etc/nginx
+        - nginxhtml:/usr/share/nginx/html
+    networks:
+        myNetwork:
+            aliases:
+                - backend-nginx
+
+    
+volumes:
+    config:
+    logs:
+    data:
+    rdata:
+    rconf:
+    nginxlog:
+    nginxetc:
+    nginxhtml:
+
+networks:
+  myNetwork:
+    driver: bridge

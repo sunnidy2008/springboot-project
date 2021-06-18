@@ -1,0 +1,11 @@
+FROM hub.c.163.com/library/tomcat:8
+
+WORKDIR /usr/local/tomcat/webapps
+
+RUN rm -rf *
+
+COPY target/boot2demo-0.0.1.war .
+
+RUN mv boot2demo-0.0.1.war ROOT.war
+
+WORKDIR /usr/local/tomcat

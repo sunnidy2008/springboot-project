@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../../css/base.css"/>
+    <link rel="stylesheet" href="../../../css/iconfont.css"/>
+    <style type="text/css">
+        .el-tabs__header {background: #f2f2f2;margin: 0;}
+        .el-tabs__item {height: 41px;line-height: 41px;}
+        .el-tabs--card > .el-tabs__header .el-tabs__item {border-top: none !important}
+        .el-tabs--card > .el-tabs__header .el-tabs__item.is-active {border-radius: initial;background: #f5f6fa;border-bottom-color: #f5f6fa;}
+        .homeTabs .el-tabs__header{margin: 0;}
+        .el-menu-item [class^=dwsicon-]{position: relative;top: -1px;}
+        .el-menu-item [class^=dwsicon-].dwsicon-shicai{font-size:22px}
+        .el-menu-item [class^=dwsicon-].dwsicon-shiwujinji{font-size:19px}
+        .el-menu-item [class^=dwsicon-].dwsicon-shipu{font-size:19px}
+        .el-menu-item [class^=dwsicon-].dwsicon-purchase{font-size:21px}
+        
+        .el-dialog__body{padding-top:10px !important}
+		.btn-box{padding: 10px;text-align: center;}
+		.btm-btn{text-align: center;}
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+   	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+	<script src="https://unpkg.com/element-ui/lib/index.js"></script
+	<script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+	<script src="../../../js/utils.js"></script>
+</head>
+
+<body>
+<div id="app" v-cloak>
+	<el-container>
+	  	<el-header style="height: initial;padding-top: 20px;font-weight: bold;font-size: 14px;">
+			您当前选择的是：
+			<span style="font-weight: initial;">
+				{{selected.province.name}}{{selected.city.name}}{{selected.area.name}}{{selected.street.name}}
+				<span v-if="scene=='edit'">
+				-
+				{{selected.province.code}},{{selected.city.code}},{{selected.area.code}},{{selected.street.code}}
+				</span>
+			</span>
+		</el-header>
+	  	<el-main>
+			<el-row>
+			  <el-col :span="span" v-show="model=='p' || model=='pc' || model=='pca' || model=='pcas' ">
+				  <el-table :data="provinceData" ref="provinceTable" height="350" border size="mini"
+				  	highlight-current-row @row-click="provinceRowClick">
+				  	<el-table-column prop="cName" label="省"></el-table-column>
+				  </el-table>
+				  <el-col :span="24" class="btn-box" v-if="scene=='edit'">
+					  <el-button type="primary" plain size="small" @click="add('province')">添加</el-button>
+					  <el-button type="danger" plain size="small" @click="remove('province')">删除</el-button>
+				  </el-col>
+			  </el-col>
+			  <el-col :span="span" v-show="model=='pc' || model=='pca' || model=='pcas' ">
+				  <el-table :data="cityData" ref="cityTable" height="350" border  size="mini"
+				  	highlight-current-row @row-click="cityRowClick">
+				  	<el-table-column prop="cName" label="市"></el-table-column>
+				  </el-table>
+				  <el-col :span="24" class="btn-box" v-if="scene=='edit'">
+					<el-button type="primary" plain size="small" @click="add('city')">添加</el-button>
+					<el-button type="danger" plain size="small" @click="remove('city')">删除</el-button>
+				  </el-col>
+			  </el-col>
+			  <el-col :span="span" v-show="model=='pca' || model=='pcas' ">
+				  <el-table :data="areaData" ref="areaTable" height="350" border  size="mini"
+				  	highlight-current-row @row-click="areaRowClick">
+				  	<el-table-column prop="cName" label="县/区"></el-table-column>
+				  </el-table>
+				  <el-col :span="24" class="btn-box" v-if="scene=='edit'">
+					<el-button type="primary" plain size="small" @click="add('area')">添加</el-button>
+					<el-button type="danger" plain size="small" @click="remove('area')">删除</el-button>
+				  </el-col>
+			  </el-col>
+			  <el-col :span="span" v-show="model=='pcas' ">
+				  <el-table :data="streetData" ref="streetTable" height="350" border  size="mini"
+				  	highlight-current-row  @row-click="streetRowClick">
+				  	<el-table-column prop="cName" label="街道"></el-table-column>
+				  </el-table>
+				  <el-col :span="24" class="btn-box" v-if="scene=='edit'">
+					<el-button type="primary" plain size="small" @click="add('street')">添加</el-button>
+					<el-button type="danger" plain size="small" @click="remove('street')">删除</el-button>
+				  </el-col>
+			  </el-col>
+			  
+			</el-row>
+			<el-row style="margin-top:10px">
+				<el-col :span="24" class="btm-btn" v-if="scene=='select'">
+				  <el-button type="primary" @click="confirmSelect()" size="mini">确定</el-button>
+				  <el-button type="primary" plain @click="cancel()" size="mini">取消</el-button>
+			 	</el-col>
+			</el-row>
+			
+		</el-main>
+	</el-container>
+
+	
+	<el-dialog title="新增/修改" :visible.sync="dialogVisible">
+	  <el-form ref="form" :model="form" :rules="rules" label-width="80px" style="padding:10px">
+        	<el-form-item label="代码" prop="cCode">
+          		<el-input v-model="form.cCode" placeholder="名称" clearable maxlength="50" show-word-limit ></el-input>
+         	</el-form-item>
+        	<el-form-item label="名称" prop="cName">
+          		<el-input v-model="form.cName" placeholder="名称" clearable maxlength="50" show-word-limit ></el-input>
+         	</el-form-item>
+        	<el-form-item label="上级代码" prop="cParent">
+          		<el-input v-model="form.cParent" placeholder="上级代码" clearable maxlength="50" show-word-limit disabled></el-input>
+         	</el-form-item>
+        	<el-form-item label="类型" prop="cType">
+          		<el-radio-group v-model="form.cType" disabled>
+         			<el-radio v-for="item in options.cType" :label="item.code">{{item.text}}</el-radio>
+         		</el-radio-group>
+         	</el-form-item>
+		  	<el-form-item>
+		    	<el-button type="primary" @click="onSubmit">提交</el-button>
+		    	<el-button @click="closeDialog">取消</el-button>
+		  	</el-form-item>
+		</el-form>
+	</el-dialog>
+</div>
+</body>
+
+
+<script>
+    var vue = new Vue({
+        el: '#app',
+        data: function () {
+            return {
+            	span:6,
+            	provinceData:[],
+            	cityData:[],
+            	areaData:[],
+            	streetData:[],
+            	selected:{
+            		province:{code:'',name:''},
+            		city:{code:'',name:''},
+            		area:{code:'',name:''},
+            		street:{code:'',name:''}
+            	},
+            	dialogVisible:false,
+            	scene:'',//edit编辑模式，select选择模式
+            	datas:'',//需要初始化选择的数据，可以为空，多个数据以逗号分隔
+            	model:'',//需要显示的控件，可选值p(省) pc（省市）pca（省市县）pcas（省市县区）
+            	form:{
+            		"cCode" : "",
+                	"cName" : "",
+                	"cParent" : "",
+                	"cType" : "",
+            	},
+            	rules:{
+          			cCode:[
+          				{ required: true, message: '不能为空', trigger: 'change' },	
+          			],
+          			cName:[
+          				{ required: true, message: '不能为空', trigger: 'change' },	
+          			],
+          			cParent:[
+          				{ required: true, message: '不能为空', trigger: 'change' },	
+          			],
+          			cType:[
+          				{ required: true, message: '不能为空', trigger: 'change' },	
+          			],
+			    },
+			    options:{
+          			cType:[],
+			    },
+            }
+        },
+        methods: {
+        	getRow(datas,current){
+        		if(!current){
+        			return datas[0];
+        		}
+        		for(var i=0;i<datas.length;i++){
+        			if(datas[i].cCode==current){
+        				return datas[i];
+        			}
+        		}
+        	},
+        	getData(params){
+        		var that = this;
+        		let row ;debugger;
+            	utils.post("/api/sysAddress/list", params).then(function (res) {
+            		console.log(JSON.stringify(params))
+                    if (res.code == '1') {// 如果成功请求且code为1
+                    	row =that.getRow(res.data.resultList,params.current);
+                    	if(params.cType=='province'){
+	                    	that.provinceData = res.data.resultList;
+	                    	that.$refs['provinceTable'].setCurrentRow(row);
+	                    	that.selected.province.code = row?row.cCode:'';
+	                    	that.selected.province.name = row?row.cName:'';
+                    	}else if(params.cType=='city'){
+	                    	that.cityData = res.data.resultList;
+	                    	that.$refs['cityTable'].setCurrentRow(row);
+	                    	that.selected.city.code = row?row.cCode:'';
+	                    	that.selected.city.name = row?row.cName:'';
+                    	}else if(params.cType=='area'){
+	                    	that.areaData = res.data.resultList;
+	                    	that.$refs['areaTable'].setCurrentRow(row);
+	                    	that.selected.area.code = row?row.cCode:'';
+	                    	that.selected.area.name = row?row.cName:'';
+                    	}else{
+                    		that.streetData = res.data.resultList;
+                    		that.$refs['streetTable'].setCurrentRow(row);
+	                    	that.selected.street.code = row?row.cCode:'';
+	                    	that.selected.street.name = row?row.cName:'';
+                    	}
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {
+                	utils.errorMsg("网络错误，请重试",that);
+                });
+        	},
+        	getProvinceData(parent,current){
+        		this.getData({
+        			cType:'province',
+        			cParent:parent,
+        			current:current
+        		});
+        	},
+        	getCityData(parent,current){
+        		this.getData({
+        			cType:'city',
+        			cParent:parent,
+        			current:current
+        		});
+        	},
+        	getAreaData(parent,current){
+        		this.getData({
+        			cType:'area',
+        			cParent:parent,
+        			current:current
+        		});
+        	},
+        	getStreetData(parent,current){
+        		this.getData({
+        			cType:'street',
+        			cParent:parent,
+        			current:current
+        		});
+        	},
+        	clearSelected(type){
+        		this.$refs['streetTable'].setCurrentRow(this.getRow(this.streetData, this.selected.street.code));
+        		this.selected.street.code='';
+        		this.selected.street.name='';
+        		if("city"==type){
+        			this.$refs['areaTable'].setCurrentRow(this.getRow(this.areaData, this.selected.area.code));
+        			this.selected.area.code='';
+        			this.selected.area.name='';
+        		}else if("province"==type){
+        			this.$refs['areaTable'].setCurrentRow(this.getRow(this.areaData, this.selected.area.code));
+        			this.selected.area.code='';
+        			this.selected.area.name='';
+        			
+        			this.$refs['cityTable'].setCurrentRow(this.getRow(this.cityData, this.selected.city.code));
+        			this.selected.city.code='';
+        			this.selected.city.name='';
+        		}
+        	},
+        	provinceRowClick(row, column, event){
+        		this.clearSelected('province');
+        		this.selected.province.code = row.cCode;
+        		this.selected.province.name = row.cName;
+        	},
+        	cityRowClick(row, column, event){
+        		this.clearSelected('city');
+        		this.selected.city.code = row.cCode;
+        		this.selected.city.name = row.cName;
+        	},
+        	areaRowClick(row, column, event){
+        		this.clearSelected('area');
+        		this.selected.area.code = row.cCode;
+        		this.selected.area.name = row.cName;
+        	},
+        	streetRowClick(row, column, event){
+        		this.selected.street.code = row.cCode;
+        		this.selected.street.name = row.cName;
+        	},
+        	onSubmit(){
+				var that = this;
+				this.$refs['form'].validate((valid) => {
+		        	if (!valid) {
+		            	return false;
+		          	}
+					utils.post("/api/sysAddress", this.form).then(function (res) {
+                        if (res.code == '1') {// 如果成功请求且code为1
+                        	utils.successMsg(res.msg,that);
+                        	that.dialogVisible=false;
+                        	if(that.form.cType=='province')that.getProvinceData("0");
+                        	if(that.form.cType=='city')that.getCityData(that.selected.province.code);
+                        	if(that.form.cType=='area')that.getAreaData(that.selected.city.code);
+                        	if(that.form.cType=='street')that.getStreetData(that.selected.area.code);
+                        } else {
+                            utils.errorMsg(res.msg,that);
+                        }
+
+                    }, function (res) {
+                        utils.errorMsg(res.msg,that);
+                    });
+                });
+			},
+			getOptions(){
+            	let that = this;
+            	//TODO:item.option_key
+            	var params ={
+          			cType:'#ADDRESS_TYPE',
+            	};
+            	//是否存在值需要去后台
+            	var hasKey=false;
+			    for(var key in params){  
+			    	hasKey=true;
+			        break;
+			    };  
+			    if(!hasKey){
+			    	return;
+			    }
+            	utils.post("/api/sysCommonCode/options",params).then(function (res) {
+            		console.log(JSON.stringify(res))
+                    if (res.code == '1') {// 如果成功请求且code为1
+                        for(var key in params){
+                        	that.options[key]=res.data[key];
+                        }
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {
+                	utils.errorMsg("网络错误，请重试",that);
+                });
+            },
+            closeDialog(){
+            	this.form.cCode="";
+                this.form.cName="";
+                this.form.cParent="";
+                this.form.cType="";
+                this.dialogVisible=false;
+                
+            },
+            add(type){
+            	this.dialogVisible=true;
+            	this.form.cType=type;
+            	if(type=='province'){
+            		this.form.cParent='0';
+            	}else if(type=='city'){
+            		this.form.cParent=this.selected.province.code;
+            	}else if(type=='area'){
+            		this.form.cParent=this.selected.city.code;
+            	}else{
+            		this.form.cParent=this.selected.area.code;
+            	}
+            },
+            remove(type){
+            	let that = this;
+            	let code;
+            	if(type=='province')code=this.selected.province.code;
+            	if(type=='city')code=this.selected.city.code;
+            	if(type=='area')code=this.selected.area.code;
+            	if(type=='street')code=this.selected.street.code;
+            	utils.confirm("是否确认删除",this,function(){
+            		utils.post("/api/sysAddress/delete",{id:code}).then(function(res){debugger;
+            			if(type=='province'){
+            				that.getProvinceData("0");
+            			}else if(type=='city'){
+            				that.getCityData(that.selected.province.code);
+            			}else if(type=='area'){
+            				that.getAreaData(that.selected.city.code);
+            			}else{
+            				that.getStreetData(that.selected.area.code);
+            			}
+            		}, function (res) {
+	                	utils.errorMsg("网络错误，请重试",that);
+	                });
+            	});
+            },
+            confirmSelect:function(){
+            	//alert(JSON.stringify(this.selected));
+            	parent.vm.setAddrData(this.selected);
+            	parent.utils.closePopWin();
+            },
+            cancel(){
+            	parent.utils.closePopWin();
+            }
+        },
+        watch:{
+        	'selected.province.code':{
+        		handler:function(newVal,oldVal){
+        			if(this.model.indexOf('c')==-1)return;
+        			if(newVal){
+	        			this.getCityData(newVal,this.selected.city.code);
+	        			console.log("watch selected.province.code changed");
+        			}else{
+        				this.cityData=[];
+        				this.selected.city.code='';
+        				this.selected.city.name='';
+        			}
+        		},
+        		deep:true
+        	},
+        	'selected.city.code':{
+        		handler:function(newVal,oldVal){
+        			if(this.model.indexOf('a')==-1)return;
+        			if(newVal){
+	        			this.getAreaData(newVal,this.selected.area.code);
+	        			console.log("watch selected.city.code changed");
+        			}else{
+        				this.areaData=[];
+        				this.selected.area.code='';
+        				this.selected.area.name='';
+        			}
+        		},
+        		deep:true
+        	},
+        	'selected.area.code':{
+        		handler:function(newVal,oldVal){
+        			if(this.model.indexOf('s')==-1)return;
+        			if(newVal){
+	        			this.getStreetData(newVal,this.selected.street.code);
+	        			console.log("watch selected.area.code changed");
+        			}else{
+        				this.streetData=[];
+        				this.selected.street.code='';
+        				this.selected.street.name='';
+        			}
+        		},
+        		deep:true
+        	},
+        },
+        mounted : function(){
+        	
+        	var that = this;
+			
+			this.scene=utils.getParam('scene');
+			this.datas = utils.getParam('datas');
+			this.model = utils.getParam('model');
+			if(!this.scene){
+				this.scene="select";//默认是选择场景
+			}
+			if(this.scene=='edit'){
+				this.getOptions();
+			}
+			
+			if(!this.model){
+				this.model='pcas';//
+			}
+			if(this.datas){
+				let datasArray = this.datas.split(",");
+				if(datasArray[0]){
+					this.getProvinceData('0',datasArray[0]);
+				}
+				
+				if(datasArray[1]){
+					this.selected.city.code = datasArray[1];
+				}
+				
+				if(datasArray[2]){
+					this.selected.area.code = datasArray[2];
+				}
+				if(datasArray[3]){
+					this.selected.street.code = datasArray[3];
+				}
+			}else{
+				this.getProvinceData('0','11');
+			}
+			//动态处理datatable的宽度
+			this.span = 24/this.model.length;
+        }
+    })
+</script>
+</html>

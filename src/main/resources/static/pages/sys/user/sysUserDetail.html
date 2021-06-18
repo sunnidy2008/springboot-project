@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>用户表-详细</title>
+		<link rel="stylesheet" href="../../../css/base.css" />
+		<link rel="stylesheet" href="../../../css/iconfont.css" />
+		<script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+		<script src="https://unpkg.com/element-ui@2.12.0/lib/index.js"></script>
+		<link rel="stylesheet" href="https://unpkg.com/element-ui@2.12.0/lib/theme-chalk/index.css">
+	</head>
+
+	<body>
+		<div id="app" v-cloak>
+			<el-form ref="form" :model="form" :rules="rules" label-width="80px" style="padding:10px">
+	          	<el-form-item label="用户名" prop="cUsername">
+	            	<el-input v-model="form.cUsername" placeholder="用户名" clearable maxlength="50" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="性别" prop="cSex">
+	            	<el-radio-group v-model="form.cSex" >
+	           			<el-radio v-for="item in options.cSex" :label="item.code">{{item.text}}</el-radio>
+	           		</el-radio-group>
+	           	</el-form-item>
+	          	<el-form-item label="昵称" prop="cNickName">
+	            	<el-input v-model="form.cNickName" placeholder="昵称" clearable maxlength="50" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="头像地址" prop="cImg">
+	            	<el-input v-model="form.cImg" placeholder="头像地址" clearable maxlength="200" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="注册手机号" prop="cPhone">
+	            	<el-input v-model="form.cPhone" placeholder="注册手机号" clearable maxlength="50" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="注册邮箱" prop="cEmail">
+	            	<el-input v-model="form.cEmail" placeholder="注册邮箱" clearable maxlength="50" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="是否生效" prop="cEnabled">
+	            	<el-radio-group v-model="form.cEnabled" >
+	           			<el-radio v-for="item in options.cEnabled" :label="item.code">{{item.text}}</el-radio>
+	           		</el-radio-group>
+	           	</el-form-item>
+	          	<el-form-item label="" prop="cRoles">
+	            	<!-- <el-radio-group v-model="form.cRoles" >
+	           			<el-radio v-for="item in options.cEnabled" :label="item.code">{{item.text}}</el-radio>
+	           		</el-radio-group> -->
+	           		<el-transfer v-model="form.cRoles" :data="options.cRoles" :titles="['全部角色','已选角色']"></el-transfer>
+	           	</el-form-item>
+	          	
+			  	<el-form-item>
+			    	<el-button type="primary" @click="onSubmit">提交</el-button>
+			    	<el-button @click="onCancel">取消</el-button>
+			  	</el-form-item>
+			</el-form>
+		</div>
+	</body>
+	<script src="../../../js/utils.js"></script>
+	<script>
+		var vm = new Vue({
+			el: '#app',
+			data: function() {
+				return {
+				    form:{
+	                	"cPkId" : "",
+	                	"cUsername" : "",
+	                	"cPassword" : "",
+	                	"cSex" : "",
+	                	"cNickName" : "",
+	                	"cImg" : "",
+	                	"cPhone" : "",
+	                	"cEmail" : "",
+	                	"cEnabled" : "",
+	                	"tCrtTm" : "",
+	                	"tUpdTm" : "",
+	                	"cCrtId" : "",
+	                	"cUpdId" : "",
+	                	
+	                	"cRoles":[]
+				    },
+				    rules:{
+	          			cUsername:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cPassword:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cSex:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cNickName:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cImg:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cPhone:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cEmail:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cEnabled:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+				    },
+				    options:{
+	          			cSex:[],
+	          			cEnabled:[],
+	          			cRoles:[]
+				    },
+				}
+			},
+			methods: {
+				//保存用户信息
+				"onSubmit" : function(){
+					var that = this;
+					this.$refs['form'].validate((valid) => {
+			        	if (!valid) {
+			            	return false;
+			          	}
+						utils.post("/api/sysUser", this.form).then(function (res) {
+	                        if (res.code == '1') {// 如果成功请求且code为1
+	                        	utils.successMsg(res.msg,that);
+	                        	setTimeout(function () {
+	                                parent.vm.query(false);
+	        						parent.utils.closePopWin();
+	                            },1000);
+	                        } else {
+	                            utils.errorMsg(res.msg,that);
+	                        }
+	
+	                    }, function (res) {
+	                        utils.errorMsg(res.msg,that);
+	                    });
+                    });
+				},
+				onCancel(){
+				  	parent.utils.closePopWin();
+				},
+				query(id){
+					let that = this;
+					utils.post("/api/sysUser/detail",{id:id}).then(function (res) {
+                        if (res.code == '1') {// 如果成功请求且code为1
+                        	that.form=res.data;
+                        	utils.successMsg(res.msg,that);
+                        } else {
+                            utils.errorMsg(res.msg,that);
+                        }
+
+                    }, function (res) {
+                        utils.errorMsg(res.msg,that);
+                    });
+				},
+				getOptions(){
+	            	let that = this;
+	            	//TODO:item.option_key
+	            	var params ={
+	            	
+	          			cSex:'#SEX',
+	          			cEnabled:'#EFFECT',
+	          			cRoles:'role'
+	            		//cEnabled:'EFFECT',
+	            		//cCss:'COLUMN_CSS'
+	            	};
+	            	//是否存在值需要去后台
+	            	var hasKey=false;
+				    for(var key in params){  
+				    	hasKey=true;
+				        break;
+				    };  
+				    if(!hasKey){
+				    	return;
+				    }
+	            	utils.post("/api/sysCommonCode/options",params).then(function (res) {
+	            		console.log(JSON.stringify(res))
+	                    if (res.code == '1') {// 如果成功请求且code为1
+	                        for(var key in params){
+	                        	if("cRoles"==key){
+	                        		for(var i=0;i<res.data[key].length;i++){
+	                        			that.options[key].push({
+	                        				label:res.data[key][i].text,
+	                        				key:res.data[key][i].code
+	                        			});
+	                        		}
+	                        		continue;
+	                        	}
+	                        	that.options[key]=res.data[key];
+	                        }
+	                    } else {
+	                        utils.errorMsg(res.msg,that);
+	                    }
+	                }, function (res) {
+	                	utils.errorMsg("网络错误，请重试",that);
+	                });
+	            },
+			},
+			watch:{
+
+			},
+			mounted:function () {
+				var that = this;
+				this.getOptions();
+                let id = utils.getParam("id");
+				if(id!=""){
+                	this.query(id);
+				}
+            }
+		})
+  </script>
+</html>

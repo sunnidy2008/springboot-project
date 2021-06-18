@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>websocket消息-列表</title>
+    <link rel="stylesheet" href="../../../css/base.css"/>
+	<link rel="stylesheet" href="https://unpkg.com/element-ui@2.12.0/lib/theme-chalk/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+    <script src="https://unpkg.com/element-ui@2.12.0/lib/index.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+	<script src="../../../js/utils.js"></script>
+</head>
+<body>
+	<div id="app" v-cloak>
+	    <div class="mainBox height100" style="padding-bottom: 0;">
+	        <div class="layoutUi">
+	            <el-form :inline="true">
+		          	<el-form-item label="发送者用户id" prop="cFromUserId">
+		            	<el-input v-model="form.cFromUserId" placeholder="发送者用户id" clearable maxlength="50" show-word-limit ></el-input>
+		           	</el-form-item>
+		          	<el-form-item label="接受者用户id" prop="cToUserId">
+		            	<el-input v-model="form.cToUserId" placeholder="接受者用户id" clearable maxlength="50" show-word-limit ></el-input>
+		           	</el-form-item>
+		          	<el-form-item label="消息类型（预留）" prop="cType">
+		            	<el-input v-model="form.cType" placeholder="消息类型（预留）" clearable maxlength="50" show-word-limit ></el-input>
+		           	</el-form-item>
+		          	<el-form-item label="消息是否已读，Y已读,N未读" prop="cReadMrk">
+		            	<el-input v-model="form.cReadMrk" placeholder="消息是否已读，Y已读,N未读" clearable maxlength="1" show-word-limit ></el-input>
+		           	</el-form-item>
+		          	<el-form-item label="消息文本" prop="cText">
+		            	<el-input v-model="form.cText" placeholder="消息文本" clearable maxlength="200" show-word-limit ></el-input>
+		           	</el-form-item>
+		          	<el-form-item label="点击消息响应的url" prop="cUrl">
+		            	<el-input v-model="form.cUrl" placeholder="点击消息响应的url" clearable maxlength="200" show-word-limit ></el-input>
+		           	</el-form-item>
+		          	<el-form-item label="消息附带的其他参数" prop="cExtraData">
+		            	<el-input v-model="form.cExtraData" placeholder="消息附带的其他参数" clearable maxlength="500" show-word-limit ></el-input>
+		           	</el-form-item>
+		          	<el-form-item label="消息发送时间" prop="tSendTm">
+		            	<el-date-picker v-model="form.tSendTm" type="datetime" placeholder="选择日期时间" style="width:100%"></el-date-picker>
+		           	</el-form-item>
+		          	<el-form-item label="消息阅读时间" prop="tReadTm">
+		            	<el-date-picker v-model="form.tReadTm" type="datetime" placeholder="选择日期时间" style="width:100%"></el-date-picker>
+		           	</el-form-item>
+	                <el-form-item>
+	                    <el-button type="primary" @click="form._pageNum=1;query()">查询</el-button>
+						<el-button type="primary" @click="addNew" plain>新增</el-button>
+	                </el-form-item>
+	            </el-form>
+	        </div>
+	        <el-table :data="tableData.resultList" :height="tableHeight" style="width: 100%">
+	            <!--数据区域-->
+	            <el-table-column prop="cPkId" label="主键" v-if="false"></el-table-column>
+	            <el-table-column prop="cFromUserId" label="发送者用户id" width="200"></el-table-column>
+	            <el-table-column prop="cToUserId" label="接受者用户id" width="200"></el-table-column>
+	            <el-table-column prop="cType" label="消息类型（预留）" width="200"></el-table-column>
+	            <el-table-column prop="cReadMrk" label="消息是否已读，Y已读,N未读" width="200"></el-table-column>
+	            <el-table-column prop="cText" label="消息文本" width="200"></el-table-column>
+	            <el-table-column prop="cUrl" label="点击消息响应的url" width="200"></el-table-column>
+	            <el-table-column prop="cExtraData" label="消息附带的其他参数" width="200"></el-table-column>
+	            <el-table-column prop="tSendTm" label="消息发送时间" width="200"></el-table-column>
+	            <el-table-column prop="tReadTm" label="消息阅读时间" width="200"></el-table-column>
+	            <el-table-column
+			      fixed="right"
+			      label="操作"
+			      width="120">
+			      <template slot-scope="scope">
+			        <el-button @click="detail(scope.row)" type="text" size="small">查看/修改</el-button>
+			        <el-button @click="del(scope.row)" type="text" size="small">删除</el-button>
+			      </template>
+			    </el-table-column>
+	        </el-table>
+	        <el-pagination :current-page="form._pageNum" :page-sizes="[10,20, 50, 100]" :page-size="form._pageSize"
+	                       @current-change="handleCurrentChange"
+	                       @size-change="handleSizeChange"
+	                       layout="total, sizes, prev, pager, next, jumper" :total="tableData.total">
+	        </el-pagination>
+	    </div>
+	</div>
+</body>
+</html>
+<script>
+    var vm=new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                tableData: {
+                	resultList:[]
+                },
+                //查询表单上的字段
+                form: {
+                	"cPkId" : "",
+                	"cFromUserId" : "",
+                	"cToUserId" : "",
+                	"cType" : "",
+                	"cReadMrk" : "",
+                	"cText" : "",
+                	"cUrl" : "",
+                	"cExtraData" : "",
+                	"tSendTm" : "",
+                	"tReadTm" : "",
+                    _count: true,// 是否进行统计
+                    _pageNum: 1,// 当前页面
+                    _pageSize: 10,// 当前页面数据条数
+                    _total: 0,//总数
+                },
+                options:{
+			    },
+                tableHeight:0,//table的动态高度
+            }
+        },
+        methods: {
+			//查询
+            query: function (showTips) {
+            	//this.form._total = this.tableData.total;
+            	var that = this;
+            	utils.post("/api/sysWsMessage/list", this.form).then(function (res) {
+                    if (res.code == '1') {// 如果成功请求且code为1
+                    	that.tableData = res.data;
+                        if(showTips){
+                        	utils.successMsg(res.msg,that);
+                        }
+						//that.form._count = false;// 每次请求完至为false
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {
+                	utils.errorMsg("网络错误，请重试",that);
+                });
+            },
+            //新增
+            addNew:function(){
+            	let that = this;
+                utils.openPopWin('新增','sysWsMessageDetail.html',800,600,function(){
+                });
+            },
+            //查看、修改
+            detail:function(data){
+            	let that = this;
+                utils.openPopWin('详细','sysWsMessageDetail.html?id='+data.cPkId,800,600,function(){
+                });
+            },
+            //删除
+            del:function(data){
+            	let that= this;
+            	this.$confirm('此操作将永久删除该数据, 是否继续?', '提示', {
+		          confirmButtonText: '确定',
+		          cancelButtonText: '取消',
+		          type: 'warning'
+		        }).then(() => {
+		        	utils.post("/api/sysWsMessage/delete",{id:data['cPkId']}).then(function (res) {
+	                    if (res.code == '1') {// 如果成功请求且code为1
+	                        utils.successMsg("删除成功",that);
+	                        that.query(false);
+							//that.form._count = false;// 每次请求完至为false
+	                    } else {
+	                        utils.errorMsg(res.msg,that);
+	                    }
+	                }, function (res) {
+	                	utils.errorMsg("网络错误，请重试",that);
+	                });
+		        }).catch(() => {
+		        });
+            },
+            getOptions(){
+            	let that = this;
+            	//TODO:item.option_key
+            	var params ={
+            	
+          			
+            		//cEnabled:'EFFECT',
+            		//cCss:'COLUMN_CSS'
+            	};
+            	//是否存在值需要去后台
+            	var hasKey=false;
+			    for(var key in params){  
+			    	hasKey=true;
+			        break;
+			    };  
+			    if(!hasKey){
+			    	return;
+			    }
+            	utils.post("/api/sysCommonCode/options",params).then(function (res) {
+            		console.log(JSON.stringify(res))
+                    if (res.code == '1') {// 如果成功请求且code为1
+                        for(var key in params){
+                        	that.options[key]=res.data[key];
+                        }
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {
+                	utils.errorMsg("网络错误，请重试",that);
+                });
+            },
+            // 当显示页面条数发生改变
+            handleSizeChange: function (val) {
+                this.form._pageSize = val;
+                this.query(true);
+            },
+            // 当当前页面发生改变
+            handleCurrentChange: function (val) {
+                this.form._pageNum = val;
+                this.query(true);
+            },
+            // 当搜索的条件发生改变
+            changeCount:function(){
+                this.form._count=true;// 将count为true，重新去统计
+            }
+        },
+        mounted: function () {
+        	var that = this;
+            //动态设置table的高度
+            let layoutUiHeight = document.getElementsByClassName("layoutUi")[0].clientHeight;
+            let pagination = document.getElementsByClassName("el-pagination")[0].clientHeight;
+            let mainHeight = document.getElementsByClassName("mainBox")[0].clientHeight
+            this.$nextTick(function(){
+				that.tableHeight = mainHeight-layoutUiHeight-pagination-20;
+			});
+			this.getOptions();
+            this.query(true);// 加载数据
+        }
+    });
+</script>

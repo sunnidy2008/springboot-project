@@ -1,0 +1,5 @@
+FROM openjdk:8
+COPY demo-0.0.1.jar app.jar
+ENV JAVA_OPTS=""
+ENV spring.profiles.active="docker"
+ENTRYPOINT ["sh", "-c","java -Dspring.profiles.active=docker $JAVA_OPTS -jar /app.jar"]

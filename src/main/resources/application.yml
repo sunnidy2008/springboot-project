@@ -1,0 +1,34 @@
+server:
+  servlet: 
+    context-path: /
+    session:
+      timeout: 30
+        
+spring: 
+  profiles: 
+    active: dev
+  resources:
+    static-locations: classpath:/resources/,classpath:/static/
+  datasource: 
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      pool-name: myHikariCP
+  data: 
+    redis:
+      repositories:
+        enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming: 
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: true
+    database: mysql
+  cache:
+    type: redis
+
+    
+
+      
+    

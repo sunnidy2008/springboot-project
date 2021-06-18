@@ -1,0 +1,254 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>系统菜单</title>
+		<link rel="stylesheet" href="../../../css/base.css" />
+		<link rel="stylesheet" href="../../../css/iconfont.css" />
+		<script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+		<script src="https://unpkg.com/element-ui@2.12.0/lib/index.js"></script>
+		<link rel="stylesheet" href="https://unpkg.com/element-ui@2.12.0/lib/theme-chalk/index.css">
+	</head>
+	<style>
+	.custom-tree-node {
+		flex: 1;
+		display: flex;
+	    align-items: center;
+	    justify-content: space-between;
+	    font-size: 14px;
+	    padding-right: 8px;
+	}
+	</style>
+	<body>
+		<div id="app" v-cloak>
+			<div class="mainBox height100" style="width:40%">
+				<el-tree :data="menuList" 
+						 ref="menuTree" 
+						 node-key="cMenuCode" 
+						 default-expand-all 
+						 :expand-on-click-node="false" 
+						 style="height:100%"
+						 :props="treeOpts">
+					<span class="custom-tree-node" slot-scope="{ node, data }">
+						<span v-if="data.cStatus == '0'" style="text-decoration:line-through;color:silver" class="el-icon-remove">{{ node.label }}</span>
+						<span v-else class="el-icon-menu">{{ node.label }}</span>
+						<span>
+							<el-button type="text" size="mini" @click="append(data)">添加</el-button>
+							<el-button type="text" size="mini" @click="edit(data)"  v-if="data.cStatus != '2'">修改</el-button>
+					        <el-button type="text" size="mini" @click="remove(data)"  v-if="data.cStatus != '2'">删除</el-button>
+						</span>
+					</span>
+				</el-tree>
+			</div>
+			
+			<el-dialog :title="logicCtrl.editingMode == 'A' ? '增加菜单' : '修改菜单'" :visible.sync="logicCtrl.dialogVisible" width="50%">
+		    	<el-row style="margin:5px" v-show="true">
+		    		<el-col :span="6" style="text-align:right;padding-right:5px">菜单编码</el-col>
+		    		<el-col :span="18"><el-input v-model="editForm.cMenuCode" disabled></el-input></el-col>
+		    	</el-row>
+		    	<el-row style="margin:5px">
+		    		<el-col :span="6" style="text-align:right;padding-right:5px">父级编码</el-col>
+		    		<el-col :span="18"><el-input v-model="editForm.cParentCode" disabled></el-input></el-col>
+		    	</el-row>
+		    	<el-row style="margin:5px">
+		    		<el-col :span="6" style="text-align:right;padding-right:5px">菜单名称</el-col>
+		    		<el-col :span="18"><el-input v-model="editForm.cMenuName"></el-input></el-col>
+		    	</el-row>
+		    	<el-row style="margin:5px">
+		    		<el-col :span="6" style="text-align:right;padding-right:5px">指向URL</el-col>
+		    		<el-col :span="18"><el-input v-model="editForm.cUrl"></el-input></el-col>
+		    	</el-row>
+		    	<el-row style="margin:5px">
+		    		<el-col :span="6" style="text-align:right;padding-right:5px">排序</el-col>
+		    		<el-col :span="18"><el-input v-model="editForm.nNum"></el-input></el-col>
+		    	</el-row>
+		    	<el-row style="margin:5px">
+		    		<el-col :span="6" style="text-align:right;padding-right:5px" >层级</el-col>
+		    		<el-col :span="18"><el-input v-model="editForm.nLevel" disabled></el-input></el-col>
+		    	</el-row>
+		    	<el-row style="margin:5px" >
+		    		<el-col :span="6" style="text-align:right;padding-right:5px">状态</el-col>
+		    		<el-col :span="18">
+						<el-select v-model="editForm.cStatus" placeholder="请选择">
+							<el-option v-for="item in options.cStatus"
+									   :key="item.code"
+									   :label="item.text"
+									   :value="item.code">
+							</el-option>
+						</el-select>
+		    		</el-col>
+		    	</el-row>
+				<span slot="footer" class="dialog-footer">
+					<el-button @click="editCancle">取 消</el-button>
+					<el-button type="primary" @click="editConfirm">确 定</el-button>
+				</span>
+			</el-dialog>
+		</div>
+	</body>
+	<script src="../../../js/utils.js"></script>
+	<script>
+		var vm = new Vue({
+			el: '#app',
+			data: {
+				logicCtrl : {
+					dialogVisible : false,
+					tempId : 0,
+					editingMode : ""
+				},
+				treeOpts : {
+					"children" : "childrenList",
+					"label" : "cMenuName"
+				},
+				editForm:{
+					cMenuCode : "aa",
+					cParentCode : "",
+					cMenuName : "",
+					cUrl : "",
+					nNum : "",
+					nLevel : "",
+					cStatus : ""
+				},
+				options:{
+          			cStatus:[],
+			    },
+				menuList : [],
+				dict : {}
+			},
+			methods: {
+				append(data) {
+					this.logicCtrl.editingMode = "A";
+					for(key in this.editForm){
+	        			this.editForm[key] = "";
+	        		}
+					this.editForm.cParentCode = data.cMenuCode;
+					this.editForm.nLevel = parseInt(data.nLevel) + 1;
+					this.editForm.cStatus = "1";
+					
+					var that = this;
+					utils.post("/api/sysMenu/generateMenuCode",{"cParentCode" : data.cMenuCode}).then(function (res) {
+	                    if (res.code == '1') {// 如果成功请求且code为1
+	                    	that.editForm.cMenuCode = res.data.generatedCode;
+	                    } else {
+	                        utils.errorMsg(res.msg,that);
+	                    }
+	                }, function (res) {});
+					
+					this.logicCtrl.dialogVisible = true;
+				},
+			
+				edit(data){
+					this.logicCtrl.editingMode = "U";
+					for(key in this.editForm){
+	        			this.editForm[key] = data[key];
+	        		}
+					this.logicCtrl.dialogVisible = true;
+				},
+				
+				remove(data) {
+					var that = this;
+					var msg = "确定要删除菜单[" + data.cMenuName + "]及其所有子菜单吗？一经删除无法恢复！！"
+					this.$confirm(msg, '重要提示', {
+						confirmButtonText: '确定',
+						cancelButtonText: '取消',
+						type: 'warning'
+	  		        }).then(() => {
+	  		        	var param = {"cMenuCode" : data.cMenuCode};
+	  		        	utils.post("/api/sysMenu/delete", param).then(function (res) {
+	  	                    if (res.code == '1') {// 如果成功请求且code为1
+	  	                    	that.query();
+	  	                    } else {
+	  	                        utils.errorMsg(res.msg,that);
+	  	                    }
+	  	                }, function (res) {});
+	  		        }).catch(() => {});
+				},
+				
+				editCancle(){
+					for(key in this.editForm){
+	        			this.editForm[key] = "";
+	        		}
+					this.logicCtrl.tempMode = "";
+					this.logicCtrl.dialogVisible = false;
+				},
+				
+				editConfirm(){
+					var that = this;
+					utils.post("/api/sysMenu",this.editForm).then(function (res) {
+	                    if (res.code == '1') {// 如果成功请求且code为1
+	                    	that.query();
+	                    } else {
+	                        utils.errorMsg(res.msg,that);
+	                    }
+	                }, function (res) {});
+					this.editCancle();
+				},
+				
+				
+				query(){
+					var that = this;
+					utils.post("/api/sysMenu/list").then(function (res) {
+	                    if (res.code == '1') {// 如果成功请求且code为1
+	                    	that.menuList = res.data;
+	                    	utils.successMsg(res.msg,that);
+	                    } else {
+	                        utils.errorMsg(res.msg,that);
+	                    }
+	                }, function (res) {});
+		      },
+		      getOptions(){
+	            	let that = this;
+	            	//TODO:item.option_key
+	            	var params ={
+	            	
+	          			cStatus:'#EFFECT',
+	          			
+	            		//cEnabled:'EFFECT',
+	            		//cCss:'COLUMN_CSS'
+	            	};
+	            	//是否存在值需要去后台
+	            	var hasKey=false;
+				    for(var key in params){  
+				    	hasKey=true;
+				        break;
+				    };  
+				    if(!hasKey){
+				    	return;
+				    }
+	            	utils.post("/api/sysCommonCode/options",params).then(function (res) {
+	            		console.log(JSON.stringify(res))
+	                    if (res.code == '1') {// 如果成功请求且code为1
+	                        for(var key in params){
+	                        	that.options[key]=res.data[key];
+	                        }
+	                    } else {
+	                        utils.errorMsg(res.msg,that);
+	                    }
+	                }, function (res) {
+	                	utils.errorMsg("网络错误，请重试",that);
+	                });
+                }
+			},
+			watch:{
+
+			},
+			mounted:function () {
+				var that = this;
+				this.query();
+				this.getOptions();
+				/* utils.post("/api/dict/getByType", {"cDictType" : "CommonStatus"},{async : false}).then(function (res) {
+	                if (res.code == '1') {// 如果成功请求且code为1
+	                	that.dict["CommonStatus"] = res.data;
+	                } else {
+	                    that.$message({
+	                        message: res.msg,
+	                        type: 'error',
+	                        duration: 900
+	                    })
+	                }
+	            }, function (res) {}); */
+            }
+		})
+  </script>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>公共代码-列表</title>
+    <link rel="stylesheet" href="../../../css/base.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+    <script src="https://unpkg.com/element-ui@2.12.0/lib/index.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui@2.12.0/lib/theme-chalk/index.css">
+</head>
+<body>
+	<div id="app" v-cloak>
+	    <div class="mainBox height100" style="padding-bottom: 0;">
+	        <div class="layoutUi">
+	            <el-form :inline="true">
+	            	<!-- 
+	            	<el-form-item>
+	            		<el-select v-model="form.GroupCode" placeholder="请选择" clearable>
+						    <el-option v-for="item in groupOptions" :label="item.CName" :value="item.CCode">
+						    </el-option>
+						  </el-select>
+	            	</el-form-item> 
+	            	-->
+	            	<el-form-item>
+		            	<!-- <el-input v-model="form.cEnabled" placeholder="是否有效（1有效，0无效）" clearable maxlength="1" show-word-limit ></el-input> -->
+		                <el-select v-model="form.cEnabled" placeholder="有效/无效" clearable>
+						    <el-option
+						      v-for="item in options.cEnabled"
+						      v-if="item.enabled=='1'"
+						      :key="item.code"
+						      :label="item.text"
+						      :value="item.code">
+						    </el-option>
+					  	</el-select>
+	                </el-form-item>
+	                <el-form-item>
+		            	<el-input v-model="form.cCode" placeholder="代码值" clearable maxlength="50" show-word-limit ></el-input>
+	                </el-form-item>
+	                <el-form-item>
+		            	<el-input v-model="form.cText" placeholder="显示文本" clearable maxlength="200" show-word-limit ></el-input>
+	                </el-form-item>
+	                <el-form-item>
+		            	<el-input v-model="form.cParentCode" placeholder="父类代码" clearable maxlength="50" show-word-limit ></el-input>
+	                </el-form-item>
+	                <el-form-item>
+		            	<el-input v-model="form.cComment" placeholder="注释" clearable maxlength="200" show-word-limit ></el-input>
+	                </el-form-item>
+	                
+	                <el-form-item>
+	                    <el-button type="primary" @click="form._pageNum=1;query()">查询</el-button>
+						<el-button type="primary" @click="addNew" plain>新增</el-button>
+	                </el-form-item>
+	            </el-form>
+	        </div>
+	        <el-table :data="tableData.resultList" :height="tableHeight" style="width: 100%" :row-class-name="tableRowClassName">
+	            <!--数据区域-->
+	            <el-table-column prop="cPkId" label="主键" v-if="false"></el-table-column>
+	            <el-table-column prop="cParentCode" label="父类代码" width="200"></el-table-column>
+	            <el-table-column prop="cText" label="显示文本" width="200"></el-table-column>
+	            <el-table-column prop="cCode" label="代码值" width="200"></el-table-column>
+	            <el-table-column prop="cComment" label="注释" width="200"></el-table-column>
+	            <el-table-column prop="nSeq" label="序号" width="200"></el-table-column>
+	            <el-table-column label="是否有效（1有效，0无效）" width="200">
+	            	<template slot-scope="scope">
+						<span v-for="item in options.cEnabled" size="mini" :class="'column__'+item.css" round  v-if="scope.row.cEnabled==item.code" class="badge" v-html="item.text"></span>
+					</template>
+	            </el-table-column>
+	            <el-table-column prop="cCss" label="CSS样式" width="200"></el-table-column>
+	            <el-table-column
+			      fixed="right"
+			      label="操作"
+			      width="120">
+			      <template slot-scope="scope">
+			        <el-button @click="detail(scope.row)" type="text" size="small">查看/修改</el-button>
+			        <el-button @click="del(scope.row)" type="text" size="small">删除</el-button>
+			      </template>
+			    </el-table-column>
+	        </el-table>
+	        <el-pagination :current-page="form._pageNum" :page-sizes="[10,20, 50, 100]" :page-size="form._pageSize"
+	                       @current-change="handleCurrentChange"
+	                       @size-change="handleSizeChange"
+	                       layout="total, sizes, prev, pager, next, jumper" :total="tableData.total">
+	        </el-pagination>
+	    </div>
+	</div>
+</body>
+</html>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+<script src="../../../js/utils.js"></script>
+<style>
+  .el-table .group1 {
+    background: #f0f9eb;
+  }
+
+  .el-table .group2 {
+    background: none;
+  }
+</style>
+<script>
+	var currentRowClass='group1';
+    var vm=new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                tableData: {
+                	resultList:[]
+                },
+                //查询表单上的字段
+                form: {
+                	"cPkId" : "",
+                	"cCode" : "",
+                	"cText" : "",
+                	"cParentCode" : "",
+                	"cComment" : "",
+                	"cEnabled" : "",
+                	"tCrtTm" : "",
+                	"tUpdTm" : "",
+                	"cCrtId" : "",
+                	"cUpdId" : "",
+                    _count: true,// 是否进行统计
+                    _pageNum: 1,// 当前页面
+                    _pageSize: 10,// 当前页面数据条数
+                    _total: 0,//总数
+                },
+                options:{
+                	/* cEnabled:[{
+			          value: '1',
+			          label: '有效'
+			        }], */
+			        cEnabled:[],
+                },
+                tableHeight:0,//table的动态高度
+            }
+        },
+        methods: {
+			//查询
+            query: function (showTips) {
+            	//this.form._total = this.tableData.total;
+            	var that = this;
+            	utils.post("/api/sysCommonCode/list", this.form).then(function (res) {
+            		console.log(JSON.stringify(res))
+                    if (res.code == '1') {// 如果成功请求且code为1
+                    	that.tableData = res.data;
+                        if(showTips){
+                        	utils.successMsg(res.msg,that);
+                        }
+						//that.form._count = false;// 每次请求完至为false
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                    console.log(that.tableHeight)
+                }, function (res) {
+                	utils.errorMsg("网络错误，请重试",that);
+                });
+            },
+            //新增
+            addNew:function(){
+            	let that = this;
+                utils.openPopWin('新增','sysCommonCodeDetail.html',800,600,function(){
+                });
+            },
+            //查看、修改
+            detail:function(data){
+            	let that = this;
+                utils.openPopWin('详细','sysCommonCodeDetail.html?id='+data.cPkId,800,600,function(){
+                });
+            },
+            //删除
+            del:function(data){
+            	let that= this;
+            	this.$confirm('此操作将永久删除该数据, 是否继续?', '提示', {
+		          confirmButtonText: '确定',
+		          cancelButtonText: '取消',
+		          type: 'warning'
+		        }).then(() => {
+		        	utils.post("/api/sysCommonCode/delete",{id:data['cPkId']}).then(function (res) {
+	                    if (res.code == '1') {// 如果成功请求且code为1
+	                        utils.successMsg("删除成功",that);
+	                        that.query(false);
+							//that.form._count = false;// 每次请求完至为false
+	                    } else {
+	                        utils.errorMsg(res.msg,that);
+	                    }
+	                }, function (res) {
+	                	utils.errorMsg("网络错误，请重试",that);
+	                });
+		        }).catch(() => {
+		        });
+            },
+            getOptions(){
+            	let that = this;
+            	var params ={
+            		cEnabled:'#EFFECT',
+            	};
+            	utils.post("/api/sysCommonCode/options",params).then(function (res) {
+                    if (res.code == '1') {// 如果成功请求且code为1
+                        for(var key in params){
+                        	that.options[key]=res.data[key];
+                        }
+                        console.log(JSON.stringify(that.options))
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {
+                	utils.errorMsg("网络错误，请重试",that);
+                });
+            },
+            tableRowClassName({row, rowIndex}) {
+            	var tmp = window.currentRowClass;
+	        	if(rowIndex != 0 && this.tableData.resultList[rowIndex-1].cParentCode!=row.cParentCode){
+	        		if(tmp=='group1'){
+	        			tmp = 'group2';
+	        		}else{
+	        			tmp = 'group1';
+	        		}
+	        	}
+	        	window.currentRowClass = tmp;
+	          	return tmp;
+		   	},
+            // 当显示页面条数发生改变
+            handleSizeChange: function (val) {
+                this.form._pageSize = val;
+                this.query(true);
+            },
+            // 当当前页面发生改变
+            handleCurrentChange: function (val) {
+                this.form._pageNum = val;
+                this.query(true);
+            },
+            // 当搜索的条件发生改变
+            changeCount:function(){
+                this.form._count=true;// 将count为true，重新去统计
+            }
+        },
+        mounted: function () {
+        	var that = this;
+            //动态设置table的高度
+            let layoutUiHeight = document.getElementsByClassName("layoutUi")[0].clientHeight;
+            let pagination = document.getElementsByClassName("el-pagination")[0].clientHeight;
+            let mainHeight = document.getElementsByClassName("mainBox")[0].clientHeight;
+           	
+			this.$nextTick(function(){
+				that.tableHeight = mainHeight-layoutUiHeight-pagination-20;
+			});
+           	this.getOptions();
+            this.query(true);// 加载数据
+        }
+    });
+</script>

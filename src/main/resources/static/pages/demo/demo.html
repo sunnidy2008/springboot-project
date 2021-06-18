@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>系统日志表-详细</title>
+		<link rel="stylesheet" href="../../../css/base.css" />
+		<link rel="stylesheet" href="../../../css/iconfont.css" />
+		<script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+		<script src="https://unpkg.com/element-ui@2.12.0/lib/index.js"></script>
+		<link rel="stylesheet" href="https://unpkg.com/element-ui@2.12.0/lib/theme-chalk/index.css">
+	</head>
+
+	<body>
+		<div id="app" v-cloak style="padding:20px">
+			<el-form ref="form" label-width="20px">
+		  		<el-form-item label="">
+		   			<el-button type="primary" @click="sendPost('/demo/log')">log日志</el-button>控制台log日志打印及log日志文件存储，执行完毕后查看控制台日志
+		  		</el-form-item>
+		  		<el-form-item label="">
+		   			<el-button type="primary" @click="sendPost('/demo/log2db')">log日志存储到数据库</el-button>log日志存储到数据库<a href="javascript:window.open('/pages/sys/log/sysLogList.html')">查看数据库日志</a>
+		  		</el-form-item>
+		  		<el-form-item label="">
+		   			<el-button type="primary" @click="sendPost('/demo/dbOperation')">数据库操作</el-button>后台代码列举了增、删、改、查的样例
+		   			<el-button type="primary" @click="sendPost('/demo/dbOperation1')">数据库操作1</el-button>
+		  		</el-form-item>
+		  		<el-form-item label="">
+		   			<el-button type="primary" @click="sendPost('/demo/redis')">redis操作</el-button>提供redisUtils类对redis数据库进行操作
+		  		</el-form-item>
+		  		<el-form-item label="">
+		   			<el-button type="primary" @click="sendPost('/demo/roleIntercept')">角色权限拦截</el-button>提供自定义的角色拦截注解@HasRole，使用user/123456登录后请求该方法会报错，但是admin不会
+		  		</el-form-item>
+		  		<el-form-item label="">
+		   			<el-button type="primary" @click="sendPost('/demo/exception')">自定义异常</el-button>提供自义定异常CustomException的封装及返回
+		  		</el-form-item>
+		  		<el-form-item label="">
+		   			<el-button type="primary" @click="sendPost('/demo/cacheable')">添加指定分布式缓存</el-button>
+		   			<el-button type="primary" @click="sendPost('/demo/cachePut')">更新指定分布式缓存</el-button>
+		   			<el-button type="primary" @click="sendPost('/demo/cacheEvict')">删除指定分布式缓存</el-button>
+		   			结合redis和springboot提供的分布式缓存策略，演示缓存的使用，具体请查看后端代码
+		   		</el-form-item>
+		  		<el-form-item label="">
+		   			<el-button type="primary" @click="sendPost('/demo/localLock1?a=test')">本地缓存锁1(a=test)</el-button>
+		   			<el-button type="primary" @click="sendPost('/demo/localLock1?a=demo')">本地缓存锁1(a=demo)</el-button>
+		   			演示自定义本地缓存锁@LocalLock（不需要依赖redis，不支持分布式）,根据方法名和请求参数动态给资源上锁
+		  		</el-form-item>
+		  		<!-- <el-form-item label="">
+		   			<el-button type="primary" @click="sendPost('/demo/localLock2')">本地缓存锁2</el-button>
+		  		</el-form-item> -->
+		  		<el-form-item label="">
+		   			<el-button type="primary" @click="sendPost('/demo/cacheLock?a=111&b=test2')">分布式缓存锁(a=111)</el-button>
+		   			<el-button type="primary" @click="sendPost('/demo/cacheLock?a=222&b=test2')">分布式缓存锁(a=222)</el-button>
+		   			演示分布式缓存锁@CacheLock（依赖redis实现）
+		  		</el-form-item>
+		  		<el-form-item label="">
+		   			<el-button type="primary" @click="sendPost('/demo/limit')">限流</el-button>
+		   			演示自定义分布式限流@Limit（依赖redis实现），支持多种限流表达式
+		  		</el-form-item>
+		  		<el-form-item label="">
+		   			<el-button type="primary" @click="sendPost('/demo/websocket')">websocket通讯</el-button>
+		   			websocket通讯，发送请求后，注意右上角的铃铛图标
+		  		</el-form-item>
+		  		<el-form-item label="">
+		  			<span v-html="addrData"></span>
+		   			<el-button type="primary" @click="openAddr('edit')">地址控件(编辑)</el-button>
+		   			<el-button type="primary" @click="openAddr('select','pcas')">默认选择[省市县区街道]</el-button>
+		   			<el-button type="primary" @click="openAddr('select','pca')">默认选择[省市县区]</el-button>
+		   			<el-button type="primary" @click="openAddr('select','pcas','43,4302,430281,430281006')">指定初始化数据[省市县区街道]</el-button>
+		   			<el-button type="primary" @click="openAddr('select','pca','43,4302,430281')">指定初始化数据[省市县区]</el-button>
+		  			自定义地址控件演示
+		  		</el-form-item>
+		  	</el-form>
+		</div>
+	</body>
+	<script src="../../../js/utils.js"></script>
+	<script>
+		var vm = new Vue({
+			el: '#app',
+			data: function() {
+				return {
+				    addrData:''
+				}
+			},
+			methods: {
+				sendPost(url){
+					let that = this;
+					utils.post(url,{"x":"1","y":2}).then(function(res){
+						console.log(JSON.stringify(res));
+						utils.msg(res,that);
+					},function(res){
+						console.log(JSON.stringify(res));
+						utils.errorMsg(res.msg,that);
+					});
+				},
+				openAddr(scene,model,datas){
+					let url = "/pages/sys/address/address.html?scene="+scene;
+					if(model){
+						url=url+"&model="+model;
+					}
+					if(datas){
+						url=url+"&datas="+datas;
+					}
+					utils.openPopWin("选择地址",url,500,520);
+				},
+				setAddrData(addrData){
+					this.addrData = JSON.stringify(addrData);
+				}
+			},
+			watch:{
+
+			},
+			mounted:function () {
+				
+            }
+		})
+  </script>
+</html>

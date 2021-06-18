@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../css/base.css"/>
+    <link rel="stylesheet" href="../css/iconfont.css"/>
+    <style type="text/css">
+        .el-tabs__header {background: #f2f2f2;margin: 0;}
+        .el-tabs__item {height: 41px;line-height: 41px;}
+        .el-tabs--card > .el-tabs__header .el-tabs__item {border-top: none !important}
+        .el-tabs--card > .el-tabs__header .el-tabs__item.is-active {border-radius: initial;background: #f5f6fa;border-bottom-color: #f5f6fa;}
+        .homeTabs .el-tabs__header{margin: 0;}
+        .el-menu-item [class^=dwsicon-]{position: relative;top: -1px;}
+        .el-menu-item [class^=dwsicon-].dwsicon-shicai{font-size:22px}
+        .el-menu-item [class^=dwsicon-].dwsicon-shiwujinji{font-size:19px}
+        .el-menu-item [class^=dwsicon-].dwsicon-shipu{font-size:19px}
+        .el-menu-item [class^=dwsicon-].dwsicon-purchase{font-size:21px}
+        
+        /**<!--tab标签高度 强制30，留更多的空间给主操作窗口-->*/
+        .el-tabs__item{height:30px !important;line-height:30px !important}
+        .el-tabs__nav-next, .el-tabs__nav-prev{height:30px !important;line-height:30px !important}
+        
+        .el-dialog__body{padding-top:10px !important}
+        
+        .el-notification__group{cursor:pointer !important}
+    </style>
+    
+	<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+   	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+	<script src="https://unpkg.com/element-ui/lib/index.js"></script
+	<script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+	<script src="../js/utils.js"></script>
+	<script src="../js/websocket.js"></script>
+</head>
+
+<body>
+<div id="app" v-cloak>
+    <!--左边菜单-->
+    <div class="dwsMenu">
+        <div class="logo" style="background-color:#324157;cursor:pointer" @click="gotoIndexTab()">
+            <p><img src="../images/logo.png" style="width:60px" /></p>
+            <span>Demo</span>
+        </div>
+        <el-menu default-active="navActive" class="el-menu-vertical-demo" :unique-opened="uniqueOpened" background-color="transparent" text-color="#878d99">
+	      <el-submenu :index="index+''" v-for="(item,index) in contentList">
+	        <template slot="title">
+	          <i class="el-icon-menu"></i>
+	          <span>{{item.title}}</span>
+	        </template>
+	        <el-menu-item :index="index+'-'+subindex+''" v-for="(subitem,subindex) in item.children" @click="handleAddTabs">{{subitem.title}}</el-menu-item>
+	      </el-submenu>
+		</el-menu>
+        <dl>
+            <dt>
+            	<!-- <img :src="user.cUserIconUrl"/> -->
+            	<img src="../images/headImg.png"/>
+            </dt>
+            <dd>
+                <p>{{user.nickName}}</p>
+                <ul>
+                    <li @click="closeAble=true;showModify = !showModify">修改密码</li>
+                    <li @click="exitLogin">退出</li>
+                </ul>
+            </dd>
+        </dl>
+    </div>
+    <!--右边主体内容-->
+    <div class="dwsMain">
+        <el-tabs v-model="editableTabsValue" type="card" closable @tab-remove="removeTab" class="homeTabs">
+            <el-tab-pane v-html="item.content" :key="item.name" v-for="(item, index) in editableTabs"
+                         :label="item.title" :name="item.name">
+            </el-tab-pane>
+        </el-tabs>
+		<div class="ui-remind" id="topRight" @click="openMessage()">
+			<span class="jkbicon-lingdang"></span>
+			<div class="reddot" v-if="unreadNum>0"></div>
+		</div>
+        <!-- <div style="background-color: red;position: relative;float: right;height:30px;z-index:9;width:30px;line-height:30px" id="topRight">{{unreadNum}}条</div> -->
+    </div>
+    <div class="copyright">Copyright ©2019 skywalker计算机科技有限公司v1.0 All Rights Reserved.</div>
+    <!--修改密码弹出窗口-->
+    <el-dialog title="修改密码" size="tiny" :visible.sync="showModify" :show-close="closeAble" :close-on-click-modal="closeAble">
+    	<el-row style="text-align:center;color:red" v-if="!closeAble">系统检测到您的密码为初始密码，请修改密码</el-row>
+    	<el-row style="text-align:center;margin-bottom:10px;color:red" v-if="!closeAble">密码长度为6-20位，且需含字母、数字、特殊字符</el-row>
+        <el-form label-width="90px">
+            <el-form-item label="原始密码">
+                <el-input type="password" v-model="oldPassword"></el-input>
+            </el-form-item>
+            <el-form-item label="新密码">
+                <el-input type="password" v-model="newPassword"></el-input>
+            </el-form-item>
+            <el-form-item label="确认新密码">
+                <el-input type="password" v-model="rePassword"></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="showModify = !showModify" v-if="closeAble">取 消</el-button>
+            <el-button type="primary" @click="modifyPassword();">确 定</el-button>
+        </div>
+    </el-dialog>
+
+	<form id="logoutForm" action="/logout" hidden method="get"></form>
+</div>
+</body>
+
+
+<script>
+    var vm = new Vue({
+        el: '#app',
+        data: function () {
+            return {
+            	closeAble:false,
+            	uniqueOpened:true,//只展开一个menu
+                iframeHeight: null,
+                visible: false,
+                showModify: false,
+                editableTabsValue: '1',
+                navActive:'0',
+                activeName:'主页',
+                user: {username:"",nickName:'',id:"",cUserIconUrl:""},
+                oldPassword: '',
+                newPassword: '',
+                rePassword: '',
+                contentList: [],
+                editableTabs: [],
+                unreadNum:0, // 未读消息条数
+            }
+        },
+        methods: {
+        	gotoIndexTab(){//alert();
+        		window.frames['idxFrame'].location.reload()
+        		this.editableTabsValue='1';
+        	},
+            removeTab: function (targetName) {
+                // 如果只有一个tab页时不让用户继续删除
+                if(this.editableTabs.length==1){
+                    return;
+                }
+                var tabs = this.editableTabs;
+                var activeName = this.editableTabsValue;
+                var navTitle="";
+                if (activeName === targetName) {
+                    tabs.forEach(function (tab, index) {
+                        if (tab.name === targetName) {
+                            var nextTab = tabs[index + 1] || tabs[index - 1];
+                            if (nextTab) {
+                                activeName = nextTab.name;
+                                navTitle=nextTab.title;
+                            }
+                        }
+                    });
+                }
+                // 选中当前页
+                this.editableTabsValue = activeName;
+                // 去除多余的导航数据
+                this.editableTabs = tabs.filter(function (tab) {
+                    return tab.name !== targetName;
+                });
+                // 选中当前导航
+                for(var i=0;i<this.contentList.length;i++){
+                    if(this.contentList[i].title==navTitle){
+                        this.navActive=i+1+'';
+                        return;
+                    }
+                }
+            },
+            handleAddTabs: function (key) {
+            	var index1 = parseInt(key.index.split('-')[0]);
+            	var index2 = parseInt(key.index.split('-')[1]);
+            	var item = this.contentList[index1].children[index2];
+                // 判断是否页面已打开，如果打开了，直接选中页面
+                for (var i = 0; i < this.editableTabs.length; i++) {
+                    console.log(this.editableTabs[i].title)
+                    if (this.editableTabs[i].title == item.title) {
+                        this.editableTabsValue = this.editableTabs[i].name;
+                        return;
+                    }
+                }
+                // 添加页面
+                var  newTabName = item.title+'';
+                this.editableTabs.push({
+                    title: newTabName,
+                    name: newTabName,
+                    //content: item.content
+                    content: "<iframe src='"+item.url+"' name='idxFrame' frameborder='0' width='100%' height='" + this.iframeHeight + "'px'></iframe>"
+                });
+                this.editableTabsValue = newTabName;
+            },
+            exitLogin: function () {
+                this.$confirm('是否退出系统?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(function () {
+                    document.getElementById("logoutForm").submit();
+                }).catch(function () {
+                });
+            },
+            modifyPassword: function () {
+                // 判断密码是否一致
+                if(this.oldPassword.trim()==''){
+                    utils.errorMsg("请输入原始密码",that);
+                    return;
+                }
+                if(this.newPassword.trim()==''){
+                	utils.errorMsg("请输入新密码",that);
+                    return;
+                }
+                if(this.newPassword.trim().length<6||this.newPassword.trim().length>20){
+                	utils.errorMsg("新密码长度为6-20位",that);
+                    return;
+                }
+                /* var patt = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[\s\S]{6,20}$/;
+				if(!patt.test(this.newPassword)){
+                    utils.errorMsg("新密码需为6-20位，并包含大小写字母和数字",that);
+                    return;
+				} */
+                if (this.newPassword != this.rePassword) {
+                    utils.errorMsg("两次输入的密码不一致",that);
+                    return;
+                }
+                var data = {
+                    newPassword: this.newPassword,
+                    oldPassword: this.oldPassword
+                };
+                var that = this;
+                utils.post("/api/user/password", data).then(function (res) {
+                    if (res.code == 1) {
+                        if(!that.closeAble){
+                        	that.$alert('密码修改成功，请使用新密码重新登录系统', '提示', {
+					          confirmButtonText: '确定',
+					          callback: action => {
+					            document.getElementById("logoutForm").submit();
+					          }
+					        });
+                        }else{
+                        	that.showModify = !that.showModify;
+	                        utils.successMsg(res.msg,that);
+                        }
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {
+                    utils.successMsg(res.msg,that);
+                });
+            },
+            //打开websockt消息
+            openMessage(){
+            	let that = this;
+            	utils.openPopWin("消息","/pages/sys/wsMessage/me.html?userid="+this.user.id,750,450,function(){
+            		//消息弹出关闭的时候重新获取下剩余未读消息内容
+            		that.getUnreadNum();
+            	});
+            },
+            getUnreadNum(){
+            	let that = this;
+            	utils.post("/api/sysWsMessage/unread", {}).then(function (res) {
+                    if (res.code == 1) {
+                        that.unreadNum = parseInt(res.data);
+                    }
+                });
+            }
+        },
+        mounted : function(){
+        	let dwMainHeight = document.getElementsByClassName("dwsMain")[0].offsetHeight;
+        	let dwMainWidth = document.getElementsByClassName("dwsMain")[0].offsetWidth;
+        	this.iframeHeight = dwMainHeight - 41;
+        	// document.getElementById("topRight").style.top = (0-dwMainHeight+6)+"px";
+        	this.$nextTick(function(){
+	        	document.getElementsByClassName("el-tabs__header")[0].style.width = (dwMainWidth-30)+"px";
+			});
+        	var that=this;
+        	this.editableTabs.push({
+                    title: '主页',
+                    name: '1',
+                    content: '<iframe src="/pages/home.html" name="idxFrame" frameborder="0" width="100%" height="' + this.iframeHeight + 'px"></iframe>'
+                });
+            utils.post("/api/sysRoleMenu/menu", {}).then(function (res2) {
+               	if (res2.code == 1) {
+               		var setContent = function(list){
+                   		if(!!list && Array.isArray(list)){
+   	                		for(var i = 0;i < list.length; i++){
+   	                			var item = list[i];
+   	                			item["content"] = "<iframe src=\"" + item.cUrl + "\" frameborder=\"0\" width=\"100%\" height=\"" + that.iframeHeight + "px\"></iframe>";
+   	                			setContent(item["list"]);
+   	                		}
+                   		}
+                   	}
+                   	that.contentList = res2.data;
+                   	setContent(that.contentList);
+               	}else {
+                       utils.errorMsg(res2.msg,that);
+                }
+            });
+            utils.post("/api/user/me", {}).then(function (res) {
+            	that.closeAble = false;
+                that.user=res.data;
+                console.log(that.user)
+                
+                //连接ws服务器
+                connnectToWebwebsocket(that.user.id,that);
+                
+                //000000 123456
+                if(that.user.cPassword=='e10adc3949ba59abbe56e057f20f883e'||that.user.cPassword=='670b14728ad9902aecba32e22fa4f6bd'){
+                	that.showModify=true;
+                }
+            });
+            
+            //获取未读消息条数
+            this.getUnreadNum();
+        }
+    })
+</script>
+</html>

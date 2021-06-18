@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>系统日志表-详细</title>
+		<link rel="stylesheet" href="../../../css/base.css" />
+		<link rel="stylesheet" href="../../../css/iconfont.css" />
+		<script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+		<script src="https://unpkg.com/element-ui@2.12.0/lib/index.js"></script>
+		<link rel="stylesheet" href="https://unpkg.com/element-ui@2.12.0/lib/theme-chalk/index.css">
+	</head>
+
+	<body>
+		<div id="app" v-cloak>
+			<el-form ref="form" :model="form" :rules="rules" label-width="100px" style="padding:10px">
+	          	<el-form-item label="方法名" prop="cName">
+	            	<el-input v-model="form.cName" placeholder="方法名" clearable maxlength="200" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="操作人" prop="cUserId">
+	            	<el-input v-model="form.cUserId" placeholder="操作人" clearable maxlength="50" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="客户端ip" prop="cClientIp">
+	            	<el-input v-model="form.cClientIp" placeholder="客户端ip" clearable maxlength="50" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="服务器ip" prop="cServerIp">
+	            	<el-input v-model="form.cServerIp" placeholder="服务器ip" clearable maxlength="50" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="服务器端口" prop="cServerPort">
+	            	<el-input v-model="form.cServerPort" placeholder="服务器端口" clearable maxlength="50" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="开始时间" prop="tBegin">
+	            	<el-date-picker v-model="form.tBegin" type="datetime" placeholder="选择日期时间" style="width:100%"></el-date-picker>
+	           	</el-form-item>
+	          	<el-form-item label="结束时间" prop="tEnd">
+	            	<el-date-picker v-model="form.tEnd" type="datetime" placeholder="选择日期时间" style="width:100%"></el-date-picker>
+	           	</el-form-item>
+	          	<el-form-item label="请求耗时" prop="nTook">
+	            	<el-input v-model="form.nTook" placeholder="请求耗时" clearable  ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="请求url" prop="cUrl">
+	            	<el-input v-model="form.cUrl" placeholder="请求url" clearable maxlength="200" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="请求方法" prop="cMethod">
+	            	<el-input v-model="form.cMethod" placeholder="请求方法" clearable maxlength="200" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="请求类" prop="cClass">
+	            	<el-input v-model="form.cClass" placeholder="请求类" clearable maxlength="200" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="请求数据" prop="cRequest">
+	            	<el-input type="textarea" :rows="4" v-model="form.cRequest" placeholder="请求数据" clearable maxlength="4,294,967,295" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="返回数据" prop="cResponse">
+	            	<el-input type="textarea" :rows="4" v-model="form.cResponse" placeholder="返回数据" clearable maxlength="4,294,967,295" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="结果" prop="cSuccess">
+	            	<el-radio-group v-model="form.cSuccess" >
+	           			<el-radio v-for="item in options.cSuccess" :label="item.code">{{item.text}}</el-radio>
+	           		</el-radio-group>
+	           	</el-form-item>
+			  	<el-form-item>
+			    	<!-- <el-button type="primary" @click="onSubmit">提交</el-button> -->
+			    	<el-button @click="onCancel">取消</el-button>
+			  	</el-form-item>
+			</el-form>
+		</div>
+	</body>
+	<script src="../../../js/utils.js"></script>
+	<script>
+		var vm = new Vue({
+			el: '#app',
+			data: function() {
+				return {
+				    form:{
+	                	"cPkId" : "",
+	                	"cName" : "",
+	                	"cUserId" : "",
+	                	"cClientIp" : "",
+	                	"cServerIp" : "",
+	                	"cServerPort" : "",
+	                	"tBegin" : "",
+	                	"tEnd" : "",
+	                	"nTook" : "",
+	                	"cMethod" : "",
+	                	"cClass" : "",
+	                	"cRequest" : "",
+	                	"cResponse" : "",
+	                	"cUrl" : "",
+	                	"cSuccess" : "",
+				    },
+				    rules:{
+	          			cName:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cUserId:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cClientIp:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cServerIp:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cServerPort:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			tBegin:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			tEnd:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			nTook:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cMethod:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cClass:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cRequest:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cResponse:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cUrl:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cSuccess:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+				    },
+				    options:{
+	          			cSuccess:[],
+				    },
+				}
+			},
+			methods: {
+				//保存用户信息
+				"onSubmit" : function(){
+					var that = this;
+					this.$refs['form'].validate((valid) => {
+			        	if (!valid) {
+			            	return false;
+			          	}
+						utils.post("/api/sysLog", this.form).then(function (res) {
+	                        if (res.code == '1') {// 如果成功请求且code为1
+	                        	utils.successMsg(res.msg,that);
+	                        	setTimeout(function () {
+	                                parent.vm.query(false);
+	        						parent.utils.closePopWin();
+	                            },1000);
+	                        } else {
+	                            utils.errorMsg(res.msg,that);
+	                        }
+	
+	                    }, function (res) {
+	                        utils.errorMsg(res.msg,that);
+	                    });
+                    });
+				},
+				onCancel(){
+				  	parent.utils.closePopWin();
+				},
+				query(id){
+					let that = this;
+					utils.post("/api/sysLog/detail",{id:id}).then(function (res) {
+                        if (res.code == '1') {// 如果成功请求且code为1
+                        	that.form=res.data;
+                        	utils.successMsg(res.msg,that);
+                        } else {
+                            utils.errorMsg(res.msg,that);
+                        }
+
+                    }, function (res) {
+                        utils.errorMsg(res.msg,that);
+                    });
+				},
+				getOptions(){
+	            	let that = this;
+	            	//TODO:item.option_key
+	            	var params ={
+	            	
+	          			cSuccess:'#TRUE_FALSE',
+	          			
+	            		//cEnabled:'EFFECT',
+	            		//cCss:'COLUMN_CSS'
+	            	};
+	            	//是否存在值需要去后台
+	            	var hasKey=false;
+				    for(var key in params){  
+				    	hasKey=true;
+				        break;
+				    };  
+				    if(!hasKey){
+				    	return;
+				    }
+	            	utils.post("/api/sysCommonCode/options",params).then(function (res) {
+	            		console.log(JSON.stringify(res))
+	                    if (res.code == '1') {// 如果成功请求且code为1
+	                        for(var key in params){
+	                        	that.options[key]=res.data[key];
+	                        }
+	                    } else {
+	                        utils.errorMsg(res.msg,that);
+	                    }
+	                }, function (res) {
+	                	utils.errorMsg("网络错误，请重试",that);
+	                });
+	            },
+			},
+			watch:{
+
+			},
+			mounted:function () {
+				var that = this;
+				this.getOptions();
+                let id = utils.getParam("id");
+				if(id!=""){
+                	this.query(id);
+				}
+            }
+		})
+  </script>
+</html>

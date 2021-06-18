@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>角色表-列表</title>
+    <link rel="stylesheet" href="../../../css/base.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+	<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+	<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+
+    <style type="text/css">
+		body{padding: 0;margin: 0;}
+		.header{width: 100%;height: 70px;overflow-x:auto;overflow-y:hidden;white-space:nowrap}
+		.main{width: 100%;border-top:1px solid #ccc}
+		.main .left{width: 40%;height: 100%;float: left;border-right:1px solid #ccc;box-sizing:border-box;}
+		.main .left .top{height: 50px;}
+		.main .left .box{height: calc(100% - 50px);overflow: auto;}
+		.main .right{width: 60%;height: 100%;float: left;}
+		.main .right .top{height: 50px;}
+		.main .right .box{height: calc(100% - 50px);overflow: auto;}
+		
+		.custom-tree-node {
+			flex: 1;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			font-size: 14px;
+			padding-right: 8px;
+		}
+	
+	</style>
+</head>
+<body>
+	<div id="app" v-cloak style="background-color:white">
+	    <div class="header">
+	    	<el-button type="primary" @click="addNewRole()" size="small" style="margin-left:10px">添加角色</el-button>
+	    	<el-button type="primary" @click="modifyRole()" size="small" plain>修改角色</el-button>
+	    	<el-tag v-for="tag in allRoles" :effect="tag.cPkId==currentRoleInfo.cPkId?'dark':'light'" :key="tag.cEnname" closable 
+	    			type="success" style="margin:10px"
+	    			@close="deleteRole(tag)" @click="loadRoleMenuAndPermission(tag)">
+	    			{{tag.cName}}【{{tag.cEnname}}】
+	    	</el-tag>
+	    </div>
+		<div class="main">
+			<div class="left">
+				<div class="top">
+					<el-button type="primary" @click="saveRoleMenu()" size="small" style="margin:10px" size="small">保存角色菜单</el-button>
+				</div>
+				<div class="box">
+					<el-tree :data="allMenu" 
+							 ref="menuTree" 
+							 node-key="cMenuCode" 
+							 default-expand-all 
+							 :expand-on-click-node="false" 
+							 show-checkbox
+  							 :default-checked-keys="selectedMenu"
+  							 style="height:100%"
+							 :props="treeOpts">
+							 <!-- <span class="custom-tree-node" slot-scope="{ node, data }">
+								<span v-if="data.cStatus == '0'" style="text-decoration:line-through;color:silver" class="el-icon-remove">{{ node.label }}</span>
+								<span v-else class="el-icon-folder-opened">{{ node.label }}</span>
+								<span v-if="data.cStatus != '2'"><el-switch v-model="data.isValid" active-value="true" inactive-value="false" @change="switchMenu(data)"></el-switch></span>
+							</span> -->
+					</el-tree>
+				</div>
+			</div>
+			<div class="right">
+				<div class="top">
+					<el-form :inline="true">
+						<el-button type="primary" @click="saveRolePermission()" size="small" style="margin-top:8px" >保存角色权限【{{selectedPermission.length}}个】</el-button>
+			          	<el-form-item label="" prop="cName" style="margin-top:3px;margin-left:10px">
+			            	<el-input v-model="form.cParam" placeholder="权限名称" clearable maxlength="50" show-word-limit  size="small"></el-input>
+			           	</el-form-item>
+			          	<el-form-item label="" style="margin-top:3px;margin-left:10px">
+			           		<el-checkbox v-model="onlyShowSelected" @change="queryAllPermission(false)">只显示已选</el-checkbox>
+			           	</el-form-item>
+		                <el-form-item>
+		                    <el-button type="primary" @click="queryAllPermission()" size="small" style="margin-top:8px" plain>查询</el-button>
+		                </el-form-item>
+		            </el-form>
+				</div>
+				<div class="box" id="rightBox">
+					<div class="ui-table-box">
+						<div class="table-head">
+							<table>
+								<thead>
+									<th width="10%">
+										<el-checkbox v-model="checkAllPermission" @change="clickCheckAllPermission()"></el-checkbox>
+									</th>
+									<th width="25%">权限名称</th>
+									<th width="25%">访问路径</th>
+									<th width="25%">方法</th>
+									<th width="15%">备注</th>
+								</thead>
+							</table>
+						</div>
+						<div class="table-body" style="overflow-y:hidden !important;">
+							<table>
+								<tbody id="tbody">
+									<tr v-for="(item, index) in tableData.resultList" :key="item.index" v-show="onlyShowSelected?item.isChecked:true">
+										<td width="10%">
+											<el-checkbox v-model="item.isChecked" @change="selectRolePermission(item)"></el-checkbox>
+										</td>
+										<td width="25%" v-html="item.cName"></td>
+										<td width="25%" v-html="item.cUrl"></td>
+										<td width="25%" v-html="item.cMethod"></td>
+										<td width="15%" v-html="item.cDescription"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>	
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+<script src="../../../js/utils.js"></script>
+<script>
+    var vm=new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                allRoles:[],//所有角色列表
+                currentRoleInfo:{},//当前选中的角色信息
+                allMenu:[],
+                selectedMenu:[],
+                treeOpts : {
+					"children" : "childrenList",
+					"label" : "cMenuName"
+				},
+                //查询表单上的字段
+                form: {
+                	"cParam" : "",
+                    _count: true,// 是否进行统计
+                    _pageNum: 1,// 当前页面
+                    _pageSize: 10000,// 当前页面数据条数  不能用分页，分页后第二页之后的选择√没法打上
+                    _total: 0,//总数
+                },
+                tableData: {
+                	resultList:[]
+                },
+                defaultTableData:{
+                	resultList:[]
+                },
+                checkAllPermission:false,
+                selectedPermission:[],
+                onlyShowSelected:false,
+                options:{
+			    },
+                tableHeight:0,//table的动态高度
+            }
+        },
+        methods: {
+			//查询
+            queryRoles: function (showTips) {
+            	//this.form._total = this.tableData.total;
+            	var that = this;
+            	utils.post("/api/sysRole/list", this.form).then(function (res) {
+                    if (res.code == '1') {// 如果成功请求且code为1
+                    	that.allRoles = res.data.resultList;
+                    	if(that.allRoles.length>1){
+                    		that.currentRoleInfo = that.allRoles[0];
+                    	}
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {
+                	utils.errorMsg("网络错误，请重试",that);
+                });
+            },
+            //新增
+            addNewRole:function(){
+            	let that = this;
+                utils.openPopWin('新增','sysRoleDetail.html',800,600,function(){
+                });
+            },
+            //查看、修改
+            modifyRole:function(){
+            	var that = this;
+            	if(JSON.stringify(this.currentRoleInfo)=='{}'){
+            		utils.errorMsg("请选择需要编辑的角色",that);
+            		return;
+            	}
+                utils.openPopWin('详细','sysRoleDetail.html?id='+this.currentRoleInfo.cPkId,800,600,function(){
+                });
+            },
+            //删除
+            deleteRole(roleInfo){
+            	let that= this;
+            	this.$confirm('此操作将永久删除角色【'+roleInfo.cName+'】, 是否继续?', '提示', {
+		          confirmButtonText: '确定',
+		          cancelButtonText: '取消',
+		          type: 'warning'
+		        }).then(() => {
+		        	utils.post("/api/sysRole/delete",{id:roleInfo['cPkId']}).then(function (res) {
+	                    if (res.code == '1') {// 如果成功请求且code为1
+	                        utils.successMsg("删除成功",that);
+	                        that.queryRoles(false);
+							//that.form._count = false;// 每次请求完至为false
+	                    } else {
+	                        utils.errorMsg(res.msg,that);
+	                    }
+	                }, function (res) {
+	                	utils.errorMsg("网络错误，请重试",that);
+	                });
+		        }).catch(() => {
+		        });
+            },
+            loadRoleMenuAndPermission(roleInfo){
+            	this.currentRoleInfo = roleInfo;
+            	//this.queryAllMenu();
+            	//alert(roleInfo.cName)
+            },
+            queryAllMenu(){
+            	var that = this;
+				//utils.post("/api/sysRoleMenu/allMenuTree").then(function (res) {
+				utils.post("/api/sysMenu/list").then(function (res) {
+                    if (res.code == '1') {// 如果成功请求且code为1
+                    	that.allMenu = res.data;
+                    } else {
+                    	utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {});
+            },
+            queryRoleMenu(roleId){
+            	var that = this;
+				utils.post("/api/sysRoleMenu/list",{cRoleId:roleId}).then(function (res) {
+                    if (res.code == '1') {// 如果成功请求且code为1
+                    	that.$refs.menuTree.setCheckedKeys(res.data);
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {});
+            },
+            queryAllPermission(showTips){
+            	var that = this;
+            	utils.post("/api/sysPermission/listAll", this.form).then(function (res) {
+                    if (res.code == '1') {// 如果成功请求且code为1
+                    	that.tableData = res.data;
+                    	
+                    	for(var i=0;i<that.selectedPermission.length;i++){
+                    		for(var j=0;j<that.tableData.resultList.length;j++){
+                    			if(that.selectedPermission[i]==that.tableData.resultList[j].cPkId){
+                    				that.tableData.resultList[j].isChecked=true;
+                    			}
+                    		}
+                    	}
+                    	
+                        if(showTips){
+                        	utils.successMsg(res.msg,that);
+                        }
+                        //that.form._count = false;// 每次请求完至为false
+                        that.bakSelectedPermission
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {
+                	utils.errorMsg("网络错误，请重试",that);
+                });
+            },
+            queryRolePermisson(roleId){
+            	var that = this;
+            	utils.post("/api/sysRolePermission/listByRoleId",{roleId:roleId}).then(function (res) {
+                    if (res.code == '1') {// 如果成功请求且code为1
+                    	that.selectedPermission = res.data;
+                    	for(var i=0;i<that.selectedPermission.length;i++){
+                    		for(var j=0;j<that.tableData.resultList.length;j++){
+                    			if(that.selectedPermission[i]==that.tableData.resultList[j].cPkId){
+                    				that.tableData.resultList[j].isChecked=true;
+                    			}
+                    		}
+                    	}
+                        //that.form._count = false;// 每次请求完至为false
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {
+                	utils.errorMsg("网络错误，请重试",that);
+                });
+            },
+            saveRoleMenu(){
+				var that = this;
+				utils.post("/api/sysRoleMenu",{"selectedMenu" : this.$refs.menuTree.getCheckedKeys(),"roleId" : this.currentRoleInfo.cPkId}).then(function (res) {
+                    if (res.code == '1') {// 如果成功请求且code为1
+                    	utils.successMsg(res.msg,that);
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {});
+			},
+			saveRolePermission(){
+				var that = this;
+				utils.post("/api/sysRolePermission",{"selectedPermission" : this.selectedPermission,"roleId" : this.currentRoleInfo.cPkId}).then(function (res) {
+                    if (res.code == '1') {// 如果成功请求且code为1
+                    	utils.successMsg(res.msg,that);
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {});
+			},
+            getOptions(){
+            	let that = this;
+            	//TODO:item.option_key
+            	var params ={
+            		//cEnabled:'EFFECT',
+            		//cCss:'COLUMN_CSS'
+            	};
+            	//是否存在值需要去后台
+            	var hasKey=false;
+			    for(var key in params){  
+			    	hasKey=true;
+			        break;
+			    };  
+			    if(!hasKey){
+			    	return;
+			    }
+            	utils.post("/api/sysCommonCode/options",params).then(function (res) {
+            		console.log(JSON.stringify(res))
+                    if (res.code == '1') {// 如果成功请求且code为1
+                        for(var key in params){
+                        	that.options[key]=res.data[key];
+                        }
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {
+                	utils.errorMsg("网络错误，请重试",that);
+                });
+            },
+            clickCheckAllPermission(){
+            	if(this.checkAllPermission==false){
+            		this.selectedPermission=[];
+            		for(var i=0;i<this.tableData.resultList.length;i++){
+            			this.tableData.resultList[i].isChecked=false;
+            		}
+            	}else{
+            		this.selectedPermission=[];
+            		for(var i=0;i<this.tableData.resultList.length;i++){
+            			this.tableData.resultList[i].isChecked=true;
+            			this.selectedPermission.push(this.tableData.resultList[i].cPkId);
+            		}
+            	}
+            },
+            selectRolePermission(item){
+            	if(item.isChecked==true){
+            		this.selectedPermission.push(item.cPkId);
+            	}else{
+            		for(var i=0;i<this.selectedPermission.length;i++){
+            			if(this.selectedPermission[i]==item.cPkId){
+            				this.selectedPermission.splice(i,1)
+            			}
+            		}
+            	}
+            },
+            // 当显示页面条数发生改变
+            handleSizeChange: function (val) {
+                this.form._pageSize = val;
+                this.queryAllPermission(false);
+            },
+            // 当当前页面发生改变
+            handleCurrentChange: function (val) {
+                this.form._pageNum = val;
+                this.queryAllPermission(false);
+            },
+            // 当搜索的条件发生改变
+            changeCount:function(){
+                this.form._count=true;// 将count为true，重新去统计
+            },
+        },
+        watch:{
+        	currentRoleInfo:function(newVal,oldVal){
+        		//this.queryAllMenu();
+        		for(var i=0;i<this.tableData.resultList.length;i++){
+        			this.tableData.resultList[i].isChecked=false;
+        		}
+        		this.selectedPermission=[];
+        		this.queryRoleMenu(newVal.cPkId);
+        		this.queryRolePermisson(newVal.cPkId);
+        		
+        	},
+        },
+        mounted: function () {
+        	var that = this;
+            //动态设置table的高度
+            var bodyHeight = $(window).height();
+			var headerHeight = $(".header").height();
+            /* let layoutUiHeight = document.getElementsTagName("window")[0].clientHeight;
+            let pagination = document.getElementsByClassName("el-pagination")[0].clientHeight;
+            let mainHeight = document.getElementsByClassName("mainBox")[0].clientHeight; */
+            this.$nextTick(function(){
+				//that.tableHeight = mainHeight-layoutUiHeight-pagination-20;
+				$(".main").css("height",bodyHeight-headerHeight-3);
+				this.tableHeight=bodyHeight-headerHeight-15-50;
+			});
+			//this.getOptions();
+            this.queryRoles(true);// 加载数据
+            this.queryAllMenu();
+            this.queryAllPermission();
+        }
+    });
+</script>

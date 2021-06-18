@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>公共代码-详细</title>
+		<link rel="stylesheet" href="../../../css/base.css" />
+		<link rel="stylesheet" href="../../../css/iconfont.css" />
+		<script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+		<script src="https://unpkg.com/element-ui@2.12.0/lib/index.js"></script>
+		<link rel="stylesheet" href="https://unpkg.com/element-ui@2.12.0/lib/theme-chalk/index.css">
+	</head>
+
+	<body>
+		<div id="app" v-cloak>
+			<el-form ref="form" :model="form" :rules="rules" label-width="80px" style="padding:10px">
+	          	<el-form-item label="代码值" prop="cCode">
+	            	<el-input v-model="form.cCode" placeholder="代码值" clearable maxlength="50" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="显示文本" prop="cText">
+	            	<el-input v-model="form.cText" placeholder="显示文本" clearable maxlength="200" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="父类代码" prop="cParentCode">
+	            	<el-input v-model="form.cParentCode" placeholder="父类代码" clearable maxlength="50" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="注释" prop="cComment">
+	            	<el-input v-model="form.cComment" placeholder="注释" clearable maxlength="200" show-word-limit ></el-input>
+	           	</el-form-item>
+	          	<el-form-item label="是否有效" prop="cEnabled">
+	           		<el-radio-group v-model="form.cEnabled" >
+	           			<el-radio v-for="item in options.cEnabled" :label="item.code">{{item.text}}</el-radio>
+	           		</el-radio-group>
+	           	</el-form-item>
+	           	<el-form-item label="序号" prop="nSeq">
+	            	<el-input v-model="form.nSeq" placeholder="序号" clearable  ></el-input>
+	           	</el-form-item>
+	           	<el-form-item label="CSS样式" prop="cCss">
+	            	<el-radio-group v-model="form.cCss" >
+	            		<el-radio label="">无</el-radio>
+	           			<el-radio v-for="item in options.cCss" :label="item.code">{{item.text}}</el-radio>
+	           		</el-radio-group>
+	           	</el-form-item>
+			  <el-form-item>
+			    <el-button type="primary" @click="onSubmit">提交</el-button>
+			    <el-button @click="onCancel">取消</el-button>
+			  </el-form-item>
+			</el-form>
+		</div>
+	</body>
+	<script src="../../../js/utils.js"></script>
+	<script>
+		var vm = new Vue({
+			el: '#app',
+			data: function() {
+				return {
+				    form:{
+	                	"cPkId" : "",
+	                	"cCode" : "",
+	                	"cText" : "",
+	                	"cParentCode" : "",
+	                	"cComment" : "",
+	                	"cEnabled" : "",
+	                	"tCrtTm" : "",
+	                	"tUpdTm" : "",
+	                	"cCrtId" : "",
+	                	"cUpdId" : "",
+				    },
+				    options:{
+				    	cEnabled:[],
+				    	cCss:[]
+				    },
+				    rules:{
+	          			cCode:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cText:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cParentCode:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cComment:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+	          			cEnabled:[
+	          				{ required: true, message: '不能为空', trigger: 'change' },	
+	          			],
+				    }
+				}
+			},
+			methods: {
+				//保存用户信息
+				"onSubmit" : function(){
+					var that = this;
+					this.$refs['form'].validate((valid) => {
+			        	if (!valid) {
+			            	return false;
+			          	}
+						utils.post("/api/sysCommonCode", this.form).then(function (res) {
+	                        if (res.code == '1') {// 如果成功请求且code为1
+	                        	utils.successMsg(res.msg,that);
+	                        	
+	                        	localStorage.setItem("commonCode.cParentCode",that.form.cParentCode);
+	                        	localStorage.setItem("commonCode.cComment",that.form.cComment);
+	                        	
+	                        	setTimeout(function () {
+	                                parent.vm.query(false);
+	        						parent.utils.closePopWin();
+	                            },1000);
+	                        } else {
+	                            utils.errorMsg(res.msg,that);
+	                        }
+	
+	                    }, function (res) {
+	                        utils.errorMsg(res.msg,that);
+	                    });
+                    });
+				},
+				onCancel(){
+				  	parent.utils.closePopWin();
+				},
+				query(id){
+					let that = this;
+					utils.post("/api/sysCommonCode/detail",{id:id}).then(function (res) {
+                        if (res.code == '1') {// 如果成功请求且code为1
+                        	that.form=res.data;
+                        	utils.successMsg(res.msg,that);
+                        } else {
+                            utils.errorMsg(res.msg,that);
+                        }
+
+                    }, function (res) {
+                        utils.errorMsg(res.msg,that);
+                    });
+				},
+				getOptions(){
+	            	let that = this;
+	            	var params ={
+	            		cEnabled:'#EFFECT',
+	            		cCss:'#COLUMN_CSS'
+	            	};
+	            	//是否存在值需要去后台
+	            	var hasKey=false;
+				    for(var key in params){  
+				    	hasKey=true;
+				        break;
+				    };  
+				    if(!hasKey){
+				    	return;
+				    }
+	            	utils.post("/api/sysCommonCode/options",params).then(function (res) {
+	            		console.log(JSON.stringify(res))
+	                    if (res.code == '1') {// 如果成功请求且code为1
+	                        for(var key in params){
+	                        	that.options[key]=res.data[key];
+	                        }
+	                    } else {
+	                        utils.errorMsg(res.msg,that);
+	                    }
+	                }, function (res) {
+	                	utils.errorMsg("网络错误，请重试",that);
+	                });
+	            },
+			},
+			watch:{
+
+			},
+			mounted:function () {
+				var that = this;
+				this.getOptions();
+                let id = utils.getParam("id");
+				if(id!=""){
+                	this.query(id);
+				}
+				that.form.cParentCode = localStorage.getItem("commonCode.cParentCode");
+	            that.form.cComment = localStorage.getItem("commonCode.cComment");
+            }
+		})
+  </script>
+</html>

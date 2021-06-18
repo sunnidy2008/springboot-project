@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>日志-列表</title>
+    <link rel="stylesheet" href="../../../css/base.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+    <script src="https://unpkg.com/element-ui@2.12.0/lib/index.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui@2.12.0/lib/theme-chalk/index.css">
+	<style type="text/css">
+		.generator-btn{padding: 10px 0;}
+		.generator-btn .el-input,.generator-btn .el-button{float: left;}
+		.generator-btn .el-button{margin-left: 12px;}
+	</style>
+</head>
+<body>
+	<div id="app" v-cloak>
+	    <div class="mainBox height100" style="padding-bottom: 0;">
+	        <div class="layoutUi">
+	            <el-form :inline="true">
+	                <el-form-item>
+		            	<el-input v-model="tableName" placeholder="表名" clearable></el-input>
+	                </el-form-item>
+	                <el-form-item>
+	                    <el-button type="primary" @click="query">查询</el-button>
+	                </el-form-item>
+	                <el-input v-model="packageName" placeholder="请输入包名(如：me.springboot.project)" style="width: 30%;"></el-input>
+					<el-button type="success" @click="generator">生成代码</el-button>
+	            </el-form>
+	        </div>
+			<div class="ui-table-box">
+				<div class="table-head">
+					<table>
+						<thead>
+							<th width="10%">
+								<el-checkbox v-model="checkAll" @change="clickCheckAll()"></el-checkbox>
+							</th>
+							<th width="25%">comment</th>
+							<th width="25%">表名</th>
+							<th width="25%">VO名</th>
+							<th width="15%">字段</th>
+						</thead>
+					</table>
+				</div>
+				<div class="table-body">
+					<table>
+						<tbody id="tbody">
+							<tr v-for="(item, index) in datas" :key="item.index">
+								<td width="10%">
+									<el-checkbox v-model="item.isChecked"></el-checkbox>
+								</td>
+								<td width="25%" v-html="item.tableName">${item.tableName}</td>
+								<td width="25%">
+									<el-input v-model="item.tableComment" placeholder="请输入表注释"></el-input>
+								</td>
+								<td width="25%">
+									<el-input v-model="item.voName" placeholder="请输入VO名(如UserVO)"></el-input>
+								</td>
+								<td width="15%">
+									<el-button type="primary" plain @click="columnInfo(item.tableName)">字段信息</el-button>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<form id="form" action="/api/code/generate" method="post" style="display: none">
+		<input id="packageName" name="packageName">
+		<input id="datas" name="datas">
+	</form>
+</body>
+</html>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+<script src="../../../js/utils.js"></script>
+<script>
+    var vm=new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                datas:[{
+                	tableName:'',
+                	tableComment:'',
+                	voName:'',
+                	isChecked:false,
+                	columnInfo:[]
+                }],
+                tableName:'',
+                packageName:'',
+                checkAll:false,
+                tableHeight:0,//table的动态高度
+            }
+        },
+        methods: {
+			//查询
+            query: function (showTips) {
+            	//this.form._total = this.tableData.total;
+            	var that = this;
+            	utils.post("/api/code/generate/tablenames", {tableName:that.tableName}).then(function (res) {
+                    if (res.code == '1') {// 如果成功请求且code为1
+                    	that.datas = [];
+                    	that.datas = res.data;
+                    	for(var i=0;i<that.datas.length;i++){
+		            		that.datas[i].isChecked = false;
+		            	}
+                        if(showTips){
+                        	utils.successMsg(res.msg,that);
+                        }
+						//that.form._count = false;// 每次请求完至为false
+                    } else {
+                        utils.errorMsg(res.msg,that);
+                    }
+                }, function (res) {
+                	utils.errorMsg("网络错误，请重试",that);
+                });
+            },
+            generator: function () {
+            	localStorage.setItem("package",this.packageName);
+            	document.getElementById("packageName").value = this.packageName;
+            	document.getElementById("datas").value = JSON.stringify(this.datas);
+            	document.getElementById("form").submit();
+            },
+            clickCheckAll(){
+            	//this.checkAll=!this.checkAll;
+            	for(var i=0;i<this.datas.length;i++){
+            		this.datas[i].isChecked = this.checkAll;
+            	}
+            },
+            columnInfo(tableName){
+            	//alert(tableName);
+            	utils.openPopWin("字段详细","columnInfo.html?tableName="+tableName,800,600);
+            },
+            getColumnInfo(tableName){
+            	for(var i=0;i<this.datas.length;i++){
+            		if(this.datas[i].tableName==tableName){
+            			if(this.datas[i].columnInfo && this.datas[i].columnInfo.length!=0)
+            				return this.datas[i].columnInfo;
+            			else
+            				return [];
+            		}
+            	}
+            	return [];
+            },
+            setColumnInfo(tableName,columnInfo){
+            	for(var i=0;i<this.datas.length;i++){
+            		if(this.datas[i].tableName==tableName){
+            			this.datas[i].columnInfo=columnInfo;
+            			break;
+            		}
+            	}
+            }
+        },
+        mounted: function () {
+        	var that = this;
+            //动态设置table的高度
+            let layoutUiHeight = document.getElementsByClassName("layoutUi")[0].clientHeight;
+            let mainHeight = document.getElementsByClassName("mainBox")[0].clientHeight
+            this.tableHeight = mainHeight-layoutUiHeight-60;
+            this.query(true);// 加载数据
+            
+            var package = localStorage.getItem("package");
+            if(package){
+            	this.packageName = package;
+            }
+        }
+    });
+</script>

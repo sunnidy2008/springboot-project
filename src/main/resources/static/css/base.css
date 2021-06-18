@@ -1,0 +1,98 @@
+[v-cloak] {display: none;}
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,dd,dl,dt,li,ol,ul,fieldset,form,label,input,textarea,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0}
+html,body{height:100%;}
+li{list-style-type:none}
+.pd20{padding: 20px;}
+.height100{height: 100%;}
+.clear{clear: both;}
+/*---------通用标题---------*/
+.title{font-size:22px;padding: 20px 0;}
+/*---------左边菜单CSS---------*/
+.dwsMenu{width: 180px;background: #324157;position: fixed;top: 0;bottom: 0;display: flex;display: -webkit-flex;flex-direction: column;-webkit-flex-direction: column;}
+.dwsMenu .logo{text-align:center;color: #fff;background: #20a0ff;padding: 10px 0 15px 0;}
+.dwsMenu .logo p{font-size:34px}
+.dwsMenu .logo span{font-size:20px;color: rgba(255,255,255,0.9);}
+.dwsMenu .el-menu-vertical-demo{flex: 1;-webkit-flex: 1;overflow: hidden;margin: 10px 0;}
+.dwsMenu .el-menu-vertical-demo:hover{overflow: auto;}
+.dwsMenu .el-menu-vertical-demo::-webkit-scrollbar{width: 6px;} 
+.dwsMenu .el-menu-vertical-demo::-webkit-scrollbar-track{border-radius: 0;background: transparent;}
+.dwsMenu .el-menu-vertical-demo::-webkit-scrollbar-track:hover{background: rgba(255,255,255,0.3);}
+.dwsMenu .el-menu-vertical-demo::-webkit-scrollbar-thumb{border-radius: 4px;background: rgba(255,255,255,0.5);}
+.dwsMenu dl{height:50px;display: flex;justify-content: space-between;padding: 0 0 10px 10px;}
+.dwsMenu dl dt{width: 50px;height: 50px;border-radius: 50%;}
+.dwsMenu dl dt img{width: 100%;height: 100%;}
+.dwsMenu dl dd{color: #fff;padding-left: 10px;}
+.dwsMenu dl dd p{width: 114px;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;}
+.dwsMenu dl dd ul li{font-size:14px;color: rgba(255,255,255,0.4);cursor: pointer;margin-right: 10px;padding-top: 5px;float: left;}
+.dwsMenu dl dd ul li:hover{color: #84AEF9;}
+/*---------中间主体CSS---------*/
+.dwsMain{background:#f5f6fa;position: fixed;left: 180px;top: 0;bottom: 30px;right: 0;}
+.mainBox{padding: 20px;box-sizing: border-box;}
+/*---------提醒通知---------*/
+.dwsMain .ui-remind{width: 31px;height: 31px;line-height: 31px;text-align: center;position: absolute;top: 0;right: 10px;z-index: 99;cursor: pointer;}
+.dwsMain .ui-remind .jkbicon-lingdang{font-size: 20px;color: #409EFF;}
+.dwsMain .ui-remind .reddot{width: 5px;height: 5px;background: red;border-radius: 50%;-webkit-border-radius: 50%;position: absolute;top: 5px;right: 2px}
+/*---------底部版权CSS---------*/
+.copyright{font-size:14px;height:30px;line-height: 30px;background: #f5f6fa;color: #bfcbd9;text-align: center;position: fixed;left: 180px;right: 0;bottom: 0;}
+/*---------弹出窗口---------*/
+.popWin{background: rgba(0,0,0,0.5);position: fixed;top: 0;bottom: 0;left: 0;right: 0;display: flex;display: -webkit-flex;justify-content: center;-webkit-justify-content: center;align-items: center;-webkit-align-items: center;visibility:hidden;z-index: 9999;}
+.popWin .popWinBox{width: 500px;height: 400px;background: #fff;display: flex;display: -webkit-flex;flex-direction: column;-webkit-flex-direction: column;margin-top: -30px;transition: all .4s;-webkit-transition: all .4s}
+.popWin .popWinHeader{font-size:18px;color: #fff;padding:9px 15px;background: #409EFF;position: relative;height:20px}
+.popWin .popWinHeader .el-icon-close{position: absolute;top: 12px;right: 10px;cursor: pointer;}
+.popWin .popWinContent{flex: 1;-webkit-flex: 1;overflow: hidden}
+/*---------table表格---------*/
+.tableUi{width: 100%;border-collapse:collapse;font-size: 14px;}
+.tableUi thead tr{background: #eaeaea;color: #666;}
+.tableUi thead tr th{padding: 14px 0 14px 10px;border:solid 1px #e6ebf5;border-bottom: solid 1px #c7c7c7;text-align: left;}
+.tableUi tbody tr td{padding: 14px 0 14px 10px;color: #5a5e66;border:solid 1px #e6ebf5}
+/*---------通用table表格列表样式---------*/
+.ui-table-box table{width: 100%;border-collapse:collapse;text-align: left;}
+.ui-table-box .table-head{color:#666;background: #eaeaea;border-bottom: solid 1px #c7c7c7;padding-right:17px;}
+.ui-table-box .table-head th,.ui-table-box .table-body td{height: 47px;font-size: 14px;padding: 0 10px;}
+.ui-table-box .table-body{width:100%; height:calc(100% - 48px);overflow-y:scroll;border-bottom: solid 1px #e6ebf5;}
+.ui-table-box .table-body td{color: #606266;border-bottom: solid 1px #ebeef5;}
+/*---------tabs左右分栏---------*/
+.layoutUi{min-height:32px;position: relative;}
+.layoutUi .layoutUiRight{position: absolute;top: 0;right: 0;}
+/*---------修改element原生样式---------*/
+/*通用样式*/
+#app{height: 100%;}
+.ui-tag{line-height: 20px;font-size: 12px;color: #fff;background: #409eff;display: inline-block;padding: 0 8px;border-radius: 10px;}
+.ui-tag.ui-tag-success{color: #fff;background: #67c23a;}
+.ui-tag.ui-tag-warning{color: #fff;background: #e6a23c;}
+.ui-tag.ui-tag-danger{color: #fff;background: #f56c6c;}
+.ui-tips{color: #e6a23c;font-size: 14px;background: #fdf6ec;padding: 8px 16px;}
+/*导航样式*/
+.el-menu{border-right:none !important;}
+.el-menu li .el-submenu__title{font-size:16px}
+.el-submenu .el-menu{background: #253346 !important;}
+.el-submenu .el-menu-item{min-width: initial !important}
+.el-submenu__icon-arrow{margin-top: -4px !important;}
+.el-submenu .el-menu-item{height: 40px !important;line-height: 40px !important;padding-left: 56px !important;}
+.el-menu-item [class^=dwsicon-]{font-size:20px;margin-right: 10px;display: inline-block;}
+/*table表格样式*/
+.el-table__header thead tr{background: #eaeaea;color: #666;}
+.el-table__header thead tr th{border-bottom: solid 1px #c7c7c7 !important;}
+.el-table__fixed-right-patch{background: #eaeaea !important;border-bottom: solid 1px #c7c7c7 !important;}/*解决table表格出现滚动条顶部有空白问题*/
+.el-table{border: none;border-top: solid 1px #dfe6ec;}
+.el-table:before{background: transparent;}
+.el-table:after{background: transparent;}
+/*分页样式*/
+.el-pagination{padding: 15px 0;text-align: right;}
+/*复合型输入框按钮样式*/
+.el-input-group__append button.btnStyle1{background-color: #409EFF !important;color: #fff !important;border-radius: initial !important;border:solid 1px #409EFF !important}
+/*解决input/select下拉选中值后会高出0.5PX高度问题*/
+/*.el-form-item .el-form-item__content{line-height: initial;}*/
+.el-select .el-input__inner,.el-input .el-input__inner{line-height: 40px;}
+/*禁用类字体颜色*/
+.el-input.is-disabled .el-input__inner{color:black!important}
+.el-textarea.is-disabled .el-textarea__inner{color:black!important}
+/*文本输入框后面的字数限制背景为初始化，否则默认是白色的，会遮蔽input框的边框 yaos*/
+.el-input .el-input__count .el-input__count-inner{background-color:initial !important}
+
+.column__success,.column__danger,.column__gray,.column__warn,.column__info{color: white;border-radius: 10px;padding: 2px 9px;line-height: 1;text-align: center;font-size: 12px;}
+.column__success{background-color: #67c23a;border: 1px solid #67c23a;}
+.column__danger{background-color: #fa5555;border: 1px solid #fa5555}
+.column__gray{background-color: #878d99;border: 1px solid #878d99}
+.column__warn{background-color: #e6a23c;border: 1px solid #e6a23c}
+.column__info{background-color: #409eff;border: 1px solid #409eff}
