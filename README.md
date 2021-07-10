@@ -4,7 +4,7 @@
 
 2、使用cmd进入工程的根目录 
 
-3、执行 mvn clean compile
+3、执行 mvn clean package
 
 4、在根目录的target目录下找到生成的 jar包文件
 
