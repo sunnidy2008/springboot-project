@@ -1,5 +1,19 @@
 部署说明：
+# 【基础】jar包部署--推荐
+1、修改utils.js中的服务器地址__SERVER_IP，修改application-docker.yml中的sys.sso.url和sys.server.url，mysql中的用户名和密码，注意需要与docker-compose.yml中mysql的对应
 
+2、使用cmd进入工程的根目录 
+
+3、执行 mvn clean compile
+
+4、在根目录的target目录下找到生成的 jar包文件
+
+5、java -jar demo-0.0.1.jar 
+
+6、通过浏览器访问：http://localhost:9091 访问应用
+
+
+# 【进阶】docker部署
 1、修改utils.js中的服务器地址__SERVER_IP，修改application-docker.yml中的sys.sso.url和sys.server.url，mysql中的用户名和密码，注意需要与docker-compose.yml中mysql的对应
 
 2、cmd进入到工程更目录，使用mvn package 打包工程
